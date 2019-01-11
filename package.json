@@ -1,0 +1,52 @@
+{
+  "name": "tic-tac-toe",
+  "version": "1.0.0",
+  "description": "Multiplayer Tic Tac Toe",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "server": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EgorHlebnikoff/TicTacToe.git"
+  },
+  "keywords": [
+    "game",
+    "tictactoe",
+    "reactjs",
+    "nodejs",
+    "react",
+    "typescript",
+    "ts",
+    "tsx",
+    "multiplayer",
+    "express",
+    "webpack"
+  ],
+  "author": "Egor Hlebnikov",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/EgorHlebnikoff/TicTacToe/issues"
+  },
+  "homepage": "https://github.com/EgorHlebnikoff/TicTacToe#readme",
+  "dependencies": {
+    "@types/react": "^16.7.18",
+    "@types/react-dom": "^16.0.11",
+    "@types/styled-components": "^4.1.5",
+    "express": "^4.16.4",
+    "react": "^16.7.0",
+    "react-dom": "^16.7.0",
+    "styled-components": "^4.1.3"
+  },
+  "devDependencies": {
+    "nodemon": "^1.18.9",
+    "ts-loader": "^5.3.3",
+    "tslint": "^5.12.0",
+    "tslint-webpack-plugin": "^2.0.1",
+    "typescript": "^3.2.2",
+    "webpack": "^4.28.4",
+    "webpack-dev-middleware": "^3.5.0",
+    "webpack-dev-server": "^3.1.14"
+  }
+}
