@@ -1,11 +1,11 @@
 {
   "defaultSeverity": "error",
   "extends": [
-    "tslint:recommended"
+    "tslint:recommended",
+    "tslint-react"
   ],
   "jsRules": {},
   "rules": {
-    "eofline": false,
     "no-trailing-whitespace": false,
     "comment-format": false,
     "quotemark": false,

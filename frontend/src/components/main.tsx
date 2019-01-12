@@ -21,9 +21,10 @@ const Title = styled('h1')`
 
 export default class Main extends React.Component<IMainProps, {}> {
     public render() {
-        return <Block>
-            <Title>Hello, my name is {this.props.name}</Title>
-        </Block>;
+        return (
+            <Block>
+                <Title>Hello, my name is {this.props.name}</Title>
+            </Block>
+        );
     }
 }
-

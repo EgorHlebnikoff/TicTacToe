@@ -2,14 +2,22 @@
   "name": "tic-tac-toe",
   "version": "1.0.0",
   "description": "Multiplayer Tic Tac Toe",
-  "main": "server.js",
   "scripts": {
+    "prestart": "npm run build",
+    "start": "node server/server.js",
+    "build": "npm run build-scripts && npm run build-server",
+    "dev": "npm run build-server && npm run watch",
+    "watch": "concurrently -k npm:watch-server-ts npm:serve --kill-others",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "server": "nodemon server.js"
+    "serve": "nodemon server/server.js",
+    "build-scrits": "webpack --config frontend/config/webpack.config.js",
+    "build-server": "tsc --p backend/config/tsconfig.json",
+    "watch-server-ts": "tsc -w --p backend/config/tsconfig.json",
+    "lint-server": "tslint -c tslint.json -p backend/config/tsconfig.json"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/EgorHlebnikoff/TicTacToe.git"
+    "url": "git+https://githuconcurrentlyb.com/EgorHlebnikoff/TicTacToe.git"
   },
   "keywords": [
     "game",
@@ -30,22 +38,27 @@
     "url": "https://github.com/EgorHlebnikoff/TicTacToe/issues"
   },
   "homepage": "https://github.com/EgorHlebnikoff/TicTacToe#readme",
+  "proxy": "http://localhost:5000",
   "dependencies": {
-    "@types/react": "^16.7.18",
-    "@types/react-dom": "^16.0.11",
-    "@types/styled-components": "^4.1.5",
     "express": "^4.16.4",
     "react": "^16.7.0",
     "react-dom": "^16.7.0",
     "styled-components": "^4.1.3"
   },
   "devDependencies": {
+    "@types/express": "^4.16.0",
+    "@types/node": "^10.12.18",
+    "@types/react": "^16.7.18",
+    "@types/react-dom": "^16.0.11",
+    "@types/styled-components": "^4.1.5",
     "nodemon": "^1.18.9",
     "ts-loader": "^5.3.3",
     "tslint": "^5.12.0",
+    "tslint-react": "^3.6.0",
     "tslint-webpack-plugin": "^2.0.1",
     "typescript": "^3.2.2",
     "webpack": "^4.28.4",
+    "webpack-cli": "^3.2.1",
     "webpack-dev-middleware": "^3.5.0",
     "webpack-dev-server": "^3.1.14"
   }

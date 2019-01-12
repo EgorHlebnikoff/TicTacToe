@@ -1,11 +1,12 @@
 const path = require("path"),
-    distPath = path.resolve(__dirname, "/public/"),
+    srcPath = path.resolve(__dirname, "../src/"),
+    distPath = path.resolve(__dirname, "../../public/"),
     TSLintPlugin = require('tslint-webpack-plugin');
 
 module.exports = {
     mode: 'development',
     devtool: 'source-map',
-    entry: "./src/app.tsx",
+    entry: srcPath + "/app.tsx",
     output: {
         filename: "bundle.js",
         path: distPath,
@@ -18,14 +19,16 @@ module.exports = {
         rules: [
             {
                 test: /\.tsx?$/,
-                loader: "ts-loader",
+                loader: "ts-loader?" + JSON.stringify({
+                    configFile: 'frontend/config/tsconfig.json'
+                }),
                 exclude: /node_modules/
             }
         ]
     },
     plugins: [
         new TSLintPlugin({
-            files: ["./src/**/*.tsx"],
+            files: [srcPath + "/**/*.tsx"],
             config: "./tslint.json",
             waitForLinting: true
         })

@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es6",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "../../server",
+    "baseUrl": "../../backend",
+    "paths": {
+      "*": [
+        "../../node_modules/*"
+      ]
+    },
+    "types": [
+      "node",
+      "express"
+    ],
+    "noImplicitAny": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": [
+    "../src/**/*"
+  ]
+}
