@@ -5,10 +5,11 @@
     "moduleResolution": "node",
     "sourceMap": true,
     "outDir": "../../server",
-    "baseUrl": "../../backend",
+    "baseUrl": "../../",
     "paths": {
       "*": [
-        "../../node_modules/*"
+        "*",
+        "node_modules/*"
       ]
     },
     "types": [

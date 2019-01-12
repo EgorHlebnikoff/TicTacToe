@@ -1,16 +1,10 @@
-const express = require('express');
-const webpack = require('webpack');
-const middleware = require('webpack-dev-middleware');
-const path = require('path');
-const config = require('../frontend/config/webpack.config');
-const app = express();
-const port = 5000;
+import * as webpack from 'webpack';
+import * as middleware from 'webpack-dev-middleware';
+import * as config from '../frontend/config/webpack.config';
+import app from './app/App';
 
 const compiler = webpack(config);
-
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, "../public/index.html"));
-});
+const port = 5000;
 
 app.use(middleware(compiler, {
     noInfo: true,
@@ -20,8 +14,9 @@ app.use(middleware(compiler, {
 app.listen(port, (error) => {
     if (error) {
         console.log(error);
+
         return;
     }
 
-    console.log("Application running on port: " + port);
+    console.log(`Application running on port: ${port}`);
 });
