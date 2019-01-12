@@ -1,9 +1,8 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-
-import Main from './components/main';
+import MainScreen from './components/mainScreen';
 
 ReactDOM.render(
-    <Main name="Tic Tac Toe"/>,
+    <MainScreen/>,
     document.getElementById('app') as HTMLElement,
 );

@@ -6,6 +6,7 @@
   ],
   "jsRules": {},
   "rules": {
+    "object-literal-sort-keys": false,
     "no-trailing-whitespace": false,
     "comment-format": false,
     "quotemark": false,
