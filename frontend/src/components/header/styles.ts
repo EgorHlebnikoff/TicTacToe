@@ -1,7 +1,7 @@
-import * as React from "react";
 import styled from "styled-components";
+import {ElementToStyle, StyledElement, StylingFunction} from "../../globalStyles";
 
-export const Title = styled('h1')`
+export const Title: StyledElement = styled('h1')`
     font-size: 82px;
     color: #fedfed;
     font-weight: 600;
@@ -12,7 +12,7 @@ export const Title = styled('h1')`
     }
 `;
 
-export const styleHeader = (header: React.ComponentType<any>) => styled(header)`
+export const Header: StylingFunction = (header: ElementToStyle): StyledElement => styled(header)`
   display: flex;
   align-items: center;
   justify-content: center;

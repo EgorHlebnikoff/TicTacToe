@@ -1,9 +1,20 @@
-import {createGlobalStyle} from 'styled-components';
+import {ComponentType} from "react";
+import {createGlobalStyle, DefaultTheme, GlobalStyleComponent, StyledComponent} from 'styled-components';
 
-const GlobalStyles = createGlobalStyle`
+export type StyledElement = StyledComponent<any, any, {}, string | number | symbol>;
+export type ElementToStyle = ComponentType | any;
+export type StylingFunction = (item: ElementToStyle) => StyledElement;
+export type GlobalStyledElement = GlobalStyleComponent<{}, DefaultTheme>;
+
+const GlobalStyles: GlobalStyledElement = createGlobalStyle`
     * { 
         margin: 0; 
-        padding: 0; 
+        padding: 0;
+        box-sizing: border-box;
+        
+        &::after, &::before {
+          box-sizing: border-box;
+        }
     };
     
     body {

@@ -1,5 +1,7 @@
 import * as React from 'react';
 import GlobalStyle from '../globalStyles';
+import Container from './container/Container';
+import GamesList from "./gamesList/GamesList";
 import Header from './header/header';
 
 class MainScreen extends React.Component {
@@ -8,6 +10,9 @@ class MainScreen extends React.Component {
             <div>
                 <GlobalStyle/>
                 <Header/>
+                <Container>
+                    <GamesList/>
+                </Container>
             </div>
         );
     }

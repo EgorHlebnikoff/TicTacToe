@@ -1,5 +1,5 @@
 import * as React from 'react';
-import * as styled from './styledComponents';
+import * as styled from './styles';
 
 interface IHeader {
     className?: string;
@@ -15,4 +15,4 @@ class Header extends React.Component<IHeader, {}> {
     }
 }
 
-export default styled.styleHeader(Header);
+export default styled.Header(Header);
