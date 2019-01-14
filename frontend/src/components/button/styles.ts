@@ -11,18 +11,18 @@ const Button: StylingFunction = (button: ElementToStyle): StyledElement => style
   
   transition: background-color .2s ease-in-out, box-shadow .2s ease-in-out;
   
-  background-color: darkgreen;
-  box-shadow: 0 4px 8px 2px rgba(0,1,30,.18);
+  background-color: #7966fd;
+  box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
   
   font-weight: 700;
   font-size: 16px;
   font-family: "Roboto", sans-serif;
-  color: #eee;
+  color: #fafafa;
   
   &:hover, &:focus {
     cursor: pointer;
-    box-shadow: none;
-    background-color: darker(darkgreen, .05);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    background-color: #5c4fe2;
   }
 `;
 

@@ -1,8 +1,8 @@
 import {ComponentType} from "react";
 import {createGlobalStyle, DefaultTheme, GlobalStyleComponent, StyledComponent} from 'styled-components';
-
+//Отточил стили. Добавил цветовую схему.
 export type StyledElement = StyledComponent<any, any, {}, string | number | symbol>;
-export type ElementToStyle = ComponentType | any;
+export type ElementToStyle = ComponentType | StyledElement | any;
 export type StylingFunction = (item: ElementToStyle) => StyledElement;
 export type GlobalStyledElement = GlobalStyleComponent<{}, DefaultTheme>;
 
@@ -18,7 +18,7 @@ const GlobalStyles: GlobalStyledElement = createGlobalStyle`
     };
     
     body {
-        background-color: #98176ade;
+        background-color: #7966fd;
     }
 `;
 

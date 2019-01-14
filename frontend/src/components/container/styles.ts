@@ -6,11 +6,12 @@ const Container: StylingFunction = (container: ElementToStyle): StyledElement =>
   flex-direction: column;
   align-items: center;
   
-  max-width: 1200px;
   width: 100%;
-  margin: 0 auto;
-  
   position: relative;
+  
+  padding-bottom: 20px;
 `;
+
+
 
 export default Container;

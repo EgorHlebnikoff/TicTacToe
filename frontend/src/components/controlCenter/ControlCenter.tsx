@@ -17,26 +17,25 @@ export default class ControlCenter extends React.Component<any, IControlCenterSt
         this.state = {
             buttonState: ButtonState.NORMAL,
         };
+
+        this.tryToCreateGame = this.tryToCreateGame.bind(this);
+        this.handleInputFocus = this.handleInputFocus.bind(this);
     }
 
     public render(): JSX.Element {
         return (
-            <Section>
+            <Section backgroundColor='#fafafa'>
                 <Input
                     ref={this.textInputRef}
                     color={this.state.buttonState}
-                    onFocus={this.handleFocus}
+                    onFocus={this.handleInputFocus}
                     placeholder="Введите ваше имя"
                     type="text"
                 />
-                <Button onClick={this.handleClick}>Создать игру</Button>
+                <Button onClick={this.tryToCreateGame}>Создать игру</Button>
             </Section>
         );
     }
-
-    private handleFocus: () => void = (): void => this.handleInputFocus();
-
-    private handleClick: () => void = (): void => this.tryToCreateGame();
 
     private handleInputFocus(): void {
         if (this.state.buttonState === ButtonState.NORMAL) return;
