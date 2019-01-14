@@ -1,5 +1,6 @@
 import styled from "styled-components";
 import {ElementToStyle, StyledElement, StylingFunction} from "../../globalStyles";
+import {IGameCard} from "./GameCard";
 
 export const Player: StyledElement = styled('p').attrs(
     (props) => ({
@@ -29,14 +30,14 @@ export const Span: StyledElement = styled('span')`
     right: 10px;
 `;
 
-const getBgColor = (props) => props.state === 'WAITING'
+const getBgColor: (props: IGameCard) => string = (props: IGameCard): string => props.state === 'WAITING'
     ? '#97E080'
     : props.state === 'PLAYING'
         ? '#E0DA80'
         : '#D46868';
 
 export const GameCard: StylingFunction = (gameCard: ElementToStyle): StyledElement => styled(gameCard)`
-  background-color: ${(props) => getBgColor(props)};
+  background-color: ${(props: IGameCard): string => getBgColor(props)};
   height: 150px;
   width: 150px;
   

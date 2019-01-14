@@ -65,24 +65,24 @@ const games: IGameParams[] = [
 ];
 
 class GameList extends React.Component<IGameList, {}> {
-    private static getGamePlayers({owner, opponent, gameResult}: { owner, opponent, gameResult: string }): IPlayer[] {
+    private static getGamePlayers(playersParams: { owner: string; opponent: string; gameResult: string; }): IPlayer[] {
         const players: IPlayer[] = [];
 
         const firstPlayer: IPlayer = {
-            name: owner,
+            name: playersParams.owner,
         };
-        if (gameResult === 'owner') firstPlayer.state = PlayerState.WON;
-        if (gameResult === 'opponent') firstPlayer.state = PlayerState.LOST;
+        if (playersParams.gameResult === 'owner') firstPlayer.state = PlayerState.WON;
+        if (playersParams.gameResult === 'opponent') firstPlayer.state = PlayerState.LOST;
 
         players.push(firstPlayer);
 
-        if (opponent === '') return players;
+        if (playersParams.opponent === '') return players;
 
         const secondPlayer: IPlayer = {
-            name: opponent,
+            name: playersParams.opponent,
         };
-        if (gameResult === 'opponent') secondPlayer.state = PlayerState.WON;
-        if (gameResult === 'owner') secondPlayer.state = PlayerState.LOST;
+        if (playersParams.gameResult === 'opponent') secondPlayer.state = PlayerState.WON;
+        if (playersParams.gameResult === 'owner') secondPlayer.state = PlayerState.LOST;
 
         players.push(secondPlayer);
 

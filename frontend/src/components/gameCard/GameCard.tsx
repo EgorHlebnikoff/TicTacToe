@@ -1,6 +1,5 @@
 import * as React from "react";
 import * as styled from './styles';
-import {CSSProperties} from "react";
 
 export enum PlayerState {WON = "WON", LOST = "LOST"}
 
