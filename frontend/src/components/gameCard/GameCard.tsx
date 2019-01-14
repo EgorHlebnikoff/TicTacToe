@@ -21,8 +21,9 @@ class GameCard extends React.Component<IGameCard, {}> {
     private static getPlayer(currArray: JSX.Element[], currPlayer: IPlayer): JSX.Element[] {
         const {name, state}: IPlayer = currPlayer;
         const color = () => state === 'WON' ? 'yellow' : 'black';
+        const mark = '\u2714';
 
-        currArray.push(<styled.Player key={name} color={color()}>{name}</styled.Player>);
+        currArray.push(<styled.Player key={name} color={color()}>{name} {state === 'WON' ? mark : ''}</styled.Player>);
 
         return currArray;
     }

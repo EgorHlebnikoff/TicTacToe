@@ -8,7 +8,7 @@ const path = require("path"),
 module.exports = {
     mode: 'development',
     devtool: 'source-map',
-    entry: srcPath + "/app.tsx",
+    entry: srcPath + "/App.tsx",
     output: {
         filename: "bundle.js",
         path: distPath,

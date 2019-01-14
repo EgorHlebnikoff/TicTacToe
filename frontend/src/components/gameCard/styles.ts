@@ -13,6 +13,10 @@ export const Player: StyledElement = styled('p').attrs(
   font-weight: 500;
   font-size: 20px;
   
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
   border-bottom: 1px solid #eee;
   &:last-child {
     border-bottom: none;
@@ -41,7 +45,14 @@ export const GameCard: StylingFunction = (gameCard: ElementToStyle): StyledEleme
   height: 150px;
   width: 150px;
   
+  box-shadow: 0 4px 8px 2px rgba(0,1,30,.18);
+  transition: box-shadow .2s ease-in-out;
+  
   position: relative;
   padding: 10px;
   border-radius: 4px;
+  
+  &:hover {
+    box-shadow: none;
+  }
 `;
