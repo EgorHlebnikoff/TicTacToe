@@ -7,7 +7,6 @@ const Container: StylingFunction = (container: ElementToStyle): StyledElement =>
   align-items: center;
   
   width: 100%;
-  position: relative;
   
   padding-bottom: 20px;
 `;

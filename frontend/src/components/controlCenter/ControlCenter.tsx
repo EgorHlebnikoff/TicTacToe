@@ -1,12 +1,14 @@
 import * as React from 'react';
 import Button from '../button/Button';
 import Input from '../input/Input';
+import Modal from '../modal/Modal';
 import Section from '../section/Section';
 
 enum ButtonState {NORMAL = "NORMAL", ERROR = "ERROR"}
 
 interface IControlCenterState {
     buttonState: ButtonState;
+    isModalOpen: boolean;
 }
 
 export default class ControlCenter extends React.Component<any, IControlCenterState> {
@@ -16,8 +18,11 @@ export default class ControlCenter extends React.Component<any, IControlCenterSt
         super(props);
         this.state = {
             buttonState: ButtonState.NORMAL,
+            isModalOpen: false,
         };
 
+        this.openModal = this.openModal.bind(this);
+        this.closeModal = this.closeModal.bind(this);
         this.tryToCreateGame = this.tryToCreateGame.bind(this);
         this.handleInputFocus = this.handleInputFocus.bind(this);
     }
@@ -33,8 +38,28 @@ export default class ControlCenter extends React.Component<any, IControlCenterSt
                     type="text"
                 />
                 <Button onClick={this.tryToCreateGame}>Создать игру</Button>
+                {this.state.isModalOpen && this.renderModal()}
             </Section>
         );
+    }
+
+    private renderModal(): JSX.Element {
+        return (
+            <Modal
+                isOpen={this.state.isModalOpen}
+                onClose={this.closeModal}
+                closeByOutsideClick={false}
+                closeByESC={false}
+            />
+        );
+    }
+
+    private openModal(): void {
+        this.setState({isModalOpen: true});
+    }
+
+    private closeModal(): void {
+        this.setState({isModalOpen: false});
     }
 
     private handleInputFocus(): void {
@@ -53,7 +78,7 @@ export default class ControlCenter extends React.Component<any, IControlCenterSt
 
             return;
         }
-
+        this.openModal();
         console.log(inputValue);
     }
 }

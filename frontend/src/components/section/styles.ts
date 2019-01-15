@@ -18,7 +18,6 @@ const Section: StylingFunction = (section: ElementToStyle): StyledElement => sty
   min-height: 150px;
   width: 100%;
   
-  position: relative;
   margin: 0 0 40px 0;
   
   @media (max-width: 526px) {
