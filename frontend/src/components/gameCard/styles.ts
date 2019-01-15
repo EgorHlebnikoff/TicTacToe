@@ -1,19 +1,23 @@
 import styled from "styled-components";
 import {ElementToStyle, StyledElement, StylingFunction} from "../../globalStyles";
-import {IGameCard} from "./GameCard";
 
-const getTextColor: (state: string) => string = (state: string): string => state === 'WON' ? '#ffe264' : '#333';
+const getBgColor: (state: string) => string = (state: string): string => state === 'WON'
+    ? '#aeff64'
+    : state === 'DRAW'
+        ? '#ffe264'
+        : 'transparent';
 
 export const Player: StyledElement = styled('p').attrs(
     (props) => ({
         style: {
-            color: getTextColor(props.color),
+            backgroundColor: getBgColor(props.color),
         },
     }),
-)`
+)` 
   font-family: 'Roboto', sans-serif;
   font-weight: 500;
   font-size: 20px;
+  color: #333;
   
   display: flex;
   justify-content: space-between;
@@ -22,10 +26,12 @@ export const Player: StyledElement = styled('p').attrs(
   padding: 10px;
   
   &:last-child {
+    border-radius: 0 0 4px 4px;
     border-bottom: none;
   }
   
   &:first-child {
+    border-radius: 4px 4px 0 0;
     border-bottom: 1px solid #666;
   }
 `;
@@ -59,14 +65,8 @@ export const TimeSpan: StyledElement = styled(Span)`
     right: 10px;
 `;
 
-const getBgColor: (props: IGameCard) => string = (props: IGameCard): string => props.state === 'WAITING'
-    ? '#aeff64'
-    : props.state === 'PLAYING'
-        ? '#64dbff'
-        : '#f66d75';
-
 export const GameCard: StylingFunction = (gameCard: ElementToStyle): StyledElement => styled(gameCard)`
-  background-color: ${(props: IGameCard): string => getBgColor(props)};
+  background-color: #fafafa;
   display: block;
   height: 200px;
   width: 200px;

@@ -75,6 +75,7 @@ export default class ControlCenter extends React.Component<any, IControlCenterSt
         const inputValue: string = input.value;
         if (inputValue === '') {
             this.setState({buttonState: ButtonState.ERROR});
+            input.focus();
 
             return;
         }

@@ -81,6 +81,7 @@ class GameList extends React.Component<IGameList, {}> {
             name: playersParams.owner,
         };
         if (playersParams.gameResult === 'owner') firstPlayer.state = PlayerState.WON;
+        if (playersParams.gameResult === 'draw') firstPlayer.state = PlayerState.DRAW;
         if (playersParams.gameResult === 'opponent') firstPlayer.state = PlayerState.LOST;
         players.push(firstPlayer);
 
@@ -88,6 +89,7 @@ class GameList extends React.Component<IGameList, {}> {
             name: playersParams.opponent,
         };
         if (playersParams.gameResult === 'opponent') secondPlayer.state = PlayerState.WON;
+        if (playersParams.gameResult === 'draw') secondPlayer.state = PlayerState.DRAW;
         if (playersParams.gameResult === 'owner') secondPlayer.state = PlayerState.LOST;
         players.push(secondPlayer);
 

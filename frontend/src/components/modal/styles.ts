@@ -86,6 +86,7 @@ export const Modal: StyledElement = styled('div')`
   max-width: 700px;
   width: 100%;
   padding-bottom: 10px;
+  border-radius: 4px;
   
   background-color: #fff;
   box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);

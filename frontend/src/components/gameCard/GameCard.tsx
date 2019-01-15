@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as styled from './styles';
 
-export enum PlayerState {WON = "WON", LOST = "LOST"}
+export enum PlayerState {WON = "WON", LOST = "LOST", DRAW = "DRAW"}
 
 export enum GameState {WAITING = "WAITING", PLAYING = "PLAYING", ENDED = "ENDED"}
 
@@ -26,12 +26,10 @@ export interface IGameCard {
 class GameCard extends React.Component<IGameCard, {}> {
     private static getPlayer(currArray: JSX.Element[], currPlayer: IPlayer, index: number): JSX.Element[] {
         const {name, state}: IPlayer = currPlayer;
-        const mark = '\u2714';
 
         currArray.push((
             <styled.Player key={index} color={state}>
-                <span>{name !== '' ? name : 'Ожидается...'}</span>
-                {state === 'WON' ? <span>{mark}</span> : ''}
+                {name !== '' ? name : 'Ожидается...'}
             </styled.Player>
         ));
 
