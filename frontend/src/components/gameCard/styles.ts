@@ -1,5 +1,6 @@
 import styled from "styled-components";
 import {ElementToStyle, StyledElement, StylingFunction} from "../../globalStyles";
+import Span from "../span/Span";
 
 const getBgColor: (state: string) => string = (state: string): string => state === 'WON'
     ? '#aeff64'
@@ -42,16 +43,6 @@ export const PlayersContainer = styled('div')`
   
   border: 1px solid #666;
   border-radius: 4px;
-`;
-
-export const Span: StyledElement = styled('span')`
-    color: #333;
-    font-family: 'Roboto', sans-serif;
-    font-weight: 400;
-    font-size: 18px;
-    
-    display: block;
-    padding: 5px;
 `;
 
 export const TimeSpan: StyledElement = styled(Span)`

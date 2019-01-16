@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 import {ElementToStyle, StyledElement, StylingFunction} from "../../globalStyles";
 
-const Button: StylingFunction = (button: ElementToStyle): StyledElement => styled(button)`
+export const Button: StylingFunction = (button: ElementToStyle): StyledElement => styled(button)`
   display: block;
   outline: none;
   
@@ -23,6 +23,42 @@ const Button: StylingFunction = (button: ElementToStyle): StyledElement => style
     cursor: pointer;
     box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
     background-color: #5c4fe2;
+  }
+`;
+
+export const TransparentButton: StylingFunction = (button: ElementToStyle): StyledElement => styled(button).attrs(
+    (props) => ({
+        disabled: props.disabled || false,
+    }),
+)`
+  display: block;
+  outline: none;
+  border: none;
+  
+  background-color: transparent;
+  
+  margin: 0 20px;
+  
+  transition: color .2s ease-in-out;
+  
+  font-weight: 700;
+  font-size: 16px;
+  font-family: "Roboto", sans-serif;
+  color: #888;
+  
+  text-transform: uppercase;
+  
+  &:hover, &:focus {
+    cursor: ${(props) => !props.disabled && 'pointer'};
+    color: ${(props) => !props.disabled && '#333' || '#888'};
+  }
+  
+  &.continue {
+    color: #69e300;
+    
+    &:hover, &:focus {
+      color: #57b600;
+    }
   }
 `;
 

@@ -82,6 +82,14 @@ export const ModalHeader: StyledElement = styled('div')`
   box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
 `;
 
+export const ModalContent: StyledElement = styled('div')`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  
+  width: 100%;
+`;
+
 export const Modal: StyledElement = styled('div')`
   max-width: 700px;
   width: 100%;

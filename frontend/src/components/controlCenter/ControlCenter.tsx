@@ -1,14 +1,19 @@
 import * as React from 'react';
-import Button from '../button/Button';
+import {Button, TransparentButton} from '../button/Button';
 import Input from '../input/Input';
 import Modal from '../modal/Modal';
+import Preloader from '../preloader/Preloader';
 import Section from '../section/Section';
+import Span from "../span/Span";
+import {ButtonContainer} from "./styles";
 
 enum ButtonState {NORMAL = "NORMAL", ERROR = "ERROR"}
 
 interface IControlCenterState {
     buttonState: ButtonState;
     isModalOpen: boolean;
+    isGameReady: boolean;
+    annotationToGameCreation: string;
 }
 
 export default class ControlCenter extends React.Component<any, IControlCenterState> {
@@ -19,12 +24,15 @@ export default class ControlCenter extends React.Component<any, IControlCenterSt
         this.state = {
             buttonState: ButtonState.NORMAL,
             isModalOpen: false,
+            isGameReady: false,
+            annotationToGameCreation: 'Ваша игра готовится...',
         };
 
         this.openModal = this.openModal.bind(this);
         this.closeModal = this.closeModal.bind(this);
+        this.setGameReady = this.setGameReady.bind(this);
         this.tryToCreateGame = this.tryToCreateGame.bind(this);
-        this.handleInputFocus = this.handleInputFocus.bind(this);
+        this.handleInputChange = this.handleInputChange.bind(this);
     }
 
     public render(): JSX.Element {
@@ -33,7 +41,7 @@ export default class ControlCenter extends React.Component<any, IControlCenterSt
                 <Input
                     ref={this.textInputRef}
                     color={this.state.buttonState}
-                    onFocus={this.handleInputFocus}
+                    onChange={this.handleInputChange}
                     placeholder="Введите ваше имя"
                     type="text"
                 />
@@ -44,14 +52,40 @@ export default class ControlCenter extends React.Component<any, IControlCenterSt
     }
 
     private renderModal(): JSX.Element {
+        const {isGameReady, annotationToGameCreation, isModalOpen} = this.state;
+        const continueButtonClassName = isGameReady ? 'continue' : '';
+
         return (
             <Modal
-                isOpen={this.state.isModalOpen}
+                title={'Создание игры'}
+                isOpen={isModalOpen}
                 onClose={this.closeModal}
                 closeByOutsideClick={false}
                 closeByESC={false}
-            />
+            >
+                <Preloader isComplete={this.state.isGameReady}/>
+                <Span>{annotationToGameCreation}</Span>
+                <ButtonContainer>
+                    <TransparentButton onClick={this.setGameReady}>
+                        Сменить статус
+                    </TransparentButton>
+                    <TransparentButton onClick={this.closeModal}>Отменить</TransparentButton>
+                    <TransparentButton
+                        className={continueButtonClassName}
+                        disabled={!isGameReady}
+                    >
+                        Перейти
+                    </TransparentButton>
+                </ButtonContainer>
+            </Modal>
         );
+    }
+
+    private setGameReady(): void {
+        this.setState({
+            isGameReady: true,
+            annotationToGameCreation: 'Игра готова! Можно приступать!',
+        });
     }
 
     private openModal(): void {
@@ -62,8 +96,11 @@ export default class ControlCenter extends React.Component<any, IControlCenterSt
         this.setState({isModalOpen: false});
     }
 
-    private handleInputFocus(): void {
+    private handleInputChange(): void {
         if (this.state.buttonState === ButtonState.NORMAL) return;
+
+        const input = this.textInputRef.current;
+        if (!input || input.value === '') return;
 
         this.setState({buttonState: ButtonState.NORMAL});
     }
@@ -79,6 +116,7 @@ export default class ControlCenter extends React.Component<any, IControlCenterSt
 
             return;
         }
+
         this.openModal();
         console.log(inputValue);
     }

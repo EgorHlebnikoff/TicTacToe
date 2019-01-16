@@ -1,4 +1,5 @@
 import * as React from "react";
+import Span from "../span/Span";
 import * as styled from './styles';
 
 export enum PlayerState {WON = "WON", LOST = "LOST", DRAW = "DRAW"}
@@ -63,7 +64,7 @@ class GameCard extends React.Component<IGameCard, {}> {
 
         const state: GameState = this.props.state;
 
-        return <styled.Span>{getStatus(state)}</styled.Span>;
+        return <Span>{getStatus(state)}</Span>;
     }
 
     private getTimeFromMilliseconds(): IDate {

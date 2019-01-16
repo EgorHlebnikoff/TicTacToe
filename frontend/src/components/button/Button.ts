@@ -1,3 +1,6 @@
-import StyledButton from './styles';
+import * as styled from './styles';
 
-export default StyledButton('button');
+export const Button = styled.Button('button');
+export const TransparentButton = styled.TransparentButton('button');
+
+export default Button;

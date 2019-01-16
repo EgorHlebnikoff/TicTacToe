@@ -9,7 +9,7 @@ interface IModal {
     afterOpen?: () => void;
     onClose: () => void;
     title?: string;
-    children?: JSX.Element[];
+    children?: React.ReactNode;
 }
 
 class Modal extends React.Component<IModal, {}> {
@@ -55,7 +55,7 @@ class Modal extends React.Component<IModal, {}> {
                         </styled.ModalTitle>
                         <styled.CloseButton onClick={this.props.onClose}/>
                     </styled.ModalHeader>
-                    {this.props.children}
+                    <styled.ModalContent>{this.props.children}</styled.ModalContent>
                 </styled.Modal>
             </styled.Backdrop>
         );
