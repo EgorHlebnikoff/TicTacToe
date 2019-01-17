@@ -18,9 +18,9 @@ class App {
         },
         {
             callback: (req, res) => {
-                res.send('hello world');
+                res.sendFile(path.join(__dirname, "../../public/index.html"));
             },
-            path: '/hello',
+            path: '/game/:id',
         },
     ];
 
