@@ -22,6 +22,7 @@ export interface IGameCard {
     state: GameState;
     time: number;
     className?: string;
+    onClick?: () => void;
 }
 
 class GameCard extends React.Component<IGameCard, {}> {
@@ -39,7 +40,7 @@ class GameCard extends React.Component<IGameCard, {}> {
 
     public render(): JSX.Element {
         return (
-            <a className={this.props.className}>
+            <div className={this.props.className} onClick={this.props.onClick}>
                 <styled.PlayersContainer>
                     {this.getPlayers()}
                 </styled.PlayersContainer>
@@ -47,7 +48,7 @@ class GameCard extends React.Component<IGameCard, {}> {
                     {this.getGameStatus()}
                 </div>
                 {this.getTime()}
-            </a>
+            </div>
         );
     }
 

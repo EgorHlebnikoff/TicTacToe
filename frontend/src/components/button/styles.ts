@@ -37,7 +37,8 @@ export const TransparentButton: StylingFunction = (button: ElementToStyle): Styl
   
   background-color: transparent;
   
-  margin: 0 20px;
+  margin: 20px;
+  margin-bottom: 0;
   
   transition: color .2s ease-in-out;
   
@@ -59,6 +60,22 @@ export const TransparentButton: StylingFunction = (button: ElementToStyle): Styl
     &:hover, &:focus {
       color: #57b600;
     }
+  }
+`;
+
+export const ButtonContainer: StyledElement = styled('div')`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  
+  margin-top: 20px;
+  padding: 0 20px;
+  
+  width: 100%;
+  
+  @media (max-width: 500px) {
+    flex-direction: column-reverse;
   }
 `;
 

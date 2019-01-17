@@ -1,11 +1,10 @@
 import * as React from 'react';
-import {Button, TransparentButton} from '../button/Button';
+import {Button, ButtonContainer, TransparentButton} from '../button/Button';
 import Input from '../input/Input';
 import Modal from '../modal/Modal';
 import Preloader from '../preloader/Preloader';
 import Section from '../section/Section';
 import Span from "../span/Span";
-import {ButtonContainer} from "./styles";
 
 enum ButtonState {NORMAL = "NORMAL", ERROR = "ERROR"}
 
@@ -62,13 +61,11 @@ export default class ControlCenter extends React.Component<any, IControlCenterSt
                 onClose={this.closeModal}
                 closeByOutsideClick={false}
                 closeByESC={false}
+                className='gameCreationModal'
             >
                 <Preloader isComplete={this.state.isGameReady}/>
                 <Span>{annotationToGameCreation}</Span>
                 <ButtonContainer>
-                    <TransparentButton onClick={this.setGameReady}>
-                        Сменить статус
-                    </TransparentButton>
                     <TransparentButton onClick={this.closeModal}>Отменить</TransparentButton>
                     <TransparentButton
                         className={continueButtonClassName}

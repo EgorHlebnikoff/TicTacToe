@@ -9,7 +9,7 @@ interface IModal {
     afterOpen?: () => void;
     onClose: () => void;
     title?: string;
-    children?: React.ReactNode;
+    className?: string;
 }
 
 class Modal extends React.Component<IModal, {}> {
@@ -48,7 +48,7 @@ class Modal extends React.Component<IModal, {}> {
 
         return (
             <styled.Backdrop>
-                <styled.Modal ref={(node: HTMLDivElement) => (this.modal = node)}>
+                <styled.Modal className={this.props.className} ref={(node: HTMLDivElement) => (this.modal = node)}>
                     <styled.ModalHeader>
                         <styled.ModalTitle>
                             {this.props.title || 'Заголовок'}

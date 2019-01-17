@@ -1,5 +1,8 @@
 import * as React from "react";
+import {ButtonContainer, TransparentButton} from "../button/Button";
 import GameCard, {GameState, IPlayer, PlayerState} from '../gameCard/GameCard';
+import Modal from "../modal/Modal";
+import Span from "../span/Span";
 import StyledGameList from './styles';
 
 interface IGameParams {
@@ -10,6 +13,10 @@ interface IGameParams {
     gameDuration: number;
     gameResult: string;
     state: string;
+}
+
+interface IGameListState {
+    isModalOpen: boolean;
 }
 
 interface IGameList {
@@ -73,7 +80,7 @@ const games: IGameParams[] = [
     },
 ];
 
-class GameList extends React.Component<IGameList, {}> {
+class GameList extends React.Component<IGameList, IGameListState> {
     private static getGamePlayers(playersParams: { owner: string; opponent: string; gameResult: string; }): IPlayer[] {
         const players: IPlayer[] = [];
 
@@ -103,29 +110,74 @@ class GameList extends React.Component<IGameList, {}> {
         return GameState.ENDED;
     }
 
-    private static getGame(currArray: JSX.Element[], currGame: IGameParams): JSX.Element[] {
+    constructor(props: IGameList) {
+        super(props);
+
+        this.state = {
+            isModalOpen: false,
+        };
+
+        this.getGame = this.getGame.bind(this);
+        this.closeModal = this.closeModal.bind(this);
+        this.openModal = this.openModal.bind(this);
+    }
+
+    public render(): JSX.Element {
+        return (
+            <section key="gamesList" className={this.props.className}>
+                {this.getCards()}
+                {this.state.isModalOpen && this.renderModal()}
+            </section>
+        );
+    }
+
+    private renderModal(): JSX.Element {
+        return (
+            <Modal
+                key='Modal'
+                title='Подвердить'
+                isOpen={this.state.isModalOpen}
+                onClose={this.closeModal}
+                closeByOutsideClick={true}
+                closeByESC={true}
+                className='verifyRedirectionModal'
+            >
+                <Span>Вы уверены, что хотите перейти к игре?</Span>
+                <ButtonContainer>
+                    <TransparentButton onClick={this.closeModal}>Нет</TransparentButton>
+                    <TransparentButton className='continue'>Да</TransparentButton>
+                </ButtonContainer>
+            </Modal>
+        );
+    }
+
+    private openModal(): void {
+        if (this.state.isModalOpen) return;
+
+        this.setState({isModalOpen: true});
+    }
+
+    private closeModal(): void {
+        if (!this.state.isModalOpen) return;
+
+        this.setState({isModalOpen: false});
+    }
+
+    private getGame(currArray: JSX.Element[], currGame: IGameParams): JSX.Element[] {
         const id = currGame.gameToken;
         const time = currGame.gameDuration;
         const players: IPlayer[] = GameList.getGamePlayers(currGame);
         const state = GameList.getGameState(currGame);
 
         currArray.push((
-            <GameCard key={id} players={players} time={time} state={state}/>
+            <GameCard key={id} players={players} time={time} state={state} onClick={this.openModal}/>
         ));
 
         return currArray;
     }
 
-    public render(): JSX.Element {
-        return (
-            <section className={this.props.className}>
-                {this.getCards()}
-            </section>
-        );
-    }
-
     private getCards(): JSX.Element[] {
-        return games.reduce(GameList.getGame, []);
+        return games.reduce(this.getGame, []);
     }
 }
 

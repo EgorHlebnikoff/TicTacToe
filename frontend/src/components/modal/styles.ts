@@ -77,6 +77,7 @@ export const ModalHeader: StyledElement = styled('div')`
   width: 100%;
   
   padding: 16px;
+  margin-bottom: 50px;
   border-bottom: 1px solid #666;
   
   box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
@@ -96,8 +97,16 @@ export const Modal: StyledElement = styled('div')`
   padding-bottom: 10px;
   border-radius: 4px;
   
+  margin: 0 20px;
+  
   background-color: #fff;
   box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+  
+  @media (max-width: 500px) {
+    span, p {
+      text-align: center;
+    }
+  }
 `;
 
 export const Backdrop: StyledElement = styled('div')`
