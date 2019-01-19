@@ -12,8 +12,10 @@ const App = () => (
 );
 
 ReactDOM.render(
-    <BrowserRouter>
-        <App/>
-    </BrowserRouter>,
+    (
+        <BrowserRouter>
+            <App/>
+        </BrowserRouter>
+    ),
     document.getElementById('app') as HTMLElement,
 );
