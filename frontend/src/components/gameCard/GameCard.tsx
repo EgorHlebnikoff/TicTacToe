@@ -1,16 +1,11 @@
 import * as React from "react";
+import getTime from "../../modules/date/DateModule";
 import Span from "../span/Span";
 import * as styled from './styles';
 
 export enum PlayerState {WON = "WON", LOST = "LOST", DRAW = "DRAW"}
 
 export enum GameState {WAITING = "WAITING", PLAYING = "PLAYING", ENDED = "ENDED"}
-
-interface IDate {
-    hours: string;
-    minutes: string;
-    seconds: string;
-}
 
 export interface IPlayer {
     name: string;
@@ -47,7 +42,7 @@ class GameCard extends React.Component<IGameCard, {}> {
                 <div>
                     {this.getGameStatus()}
                 </div>
-                {this.getTime()}
+                <styled.TimeSpan>{getTime(this.props.time)}</styled.TimeSpan>
             </div>
         );
     }
@@ -66,26 +61,6 @@ class GameCard extends React.Component<IGameCard, {}> {
         const state: GameState = this.props.state;
 
         return <Span>{getStatus(state)}</Span>;
-    }
-
-    private getTimeFromMilliseconds(): IDate {
-        const milliseconds: number = this.props.time;
-
-        const seconds: string = (milliseconds / 1000).toFixed(0);
-        const minutes: string = (milliseconds / (1000 * 60)).toFixed(0);
-        const hours: string = (milliseconds / (1000 * 60 * 60)).toFixed(0);
-
-        return {
-            hours: hours.length === 1 ? '0' + hours : hours,
-            minutes: minutes.length === 1 ? '0' + minutes : minutes,
-            seconds: seconds.length === 1 ? '0' + seconds : seconds,
-        };
-    }
-
-    private getTime(): JSX.Element {
-        const date: IDate = this.getTimeFromMilliseconds();
-
-        return <styled.TimeSpan>{`${date.hours}:${date.minutes}:${date.seconds}`}</styled.TimeSpan>;
     }
 }
 
