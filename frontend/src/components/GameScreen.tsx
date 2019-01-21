@@ -15,7 +15,7 @@ interface IGameScreenState {
 }
 
 export default class GameScreen extends React.Component<{}, IGameScreenState> {
-    private timeIncreaseInterval = null;
+    private timeIncreaseInterval: WindowTimers | null = null;
 
     constructor(props: {}) {
         super(props);

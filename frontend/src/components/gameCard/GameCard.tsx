@@ -16,8 +16,9 @@ export interface IGameCard {
     players: IPlayer[];
     state: GameState;
     time: number;
+    token: string;
     className?: string;
-    onClick?: () => void;
+    clickFunc: (gameToken: string, state: string) => void;
 }
 
 class GameCard extends React.Component<IGameCard, {}> {
@@ -33,9 +34,15 @@ class GameCard extends React.Component<IGameCard, {}> {
         return currArray;
     }
 
+    constructor(props: IGameCard) {
+        super(props);
+
+        this.handleClick = this.handleClick.bind(this);
+    }
+
     public render(): JSX.Element {
         return (
-            <div className={this.props.className} onClick={this.props.onClick}>
+            <div className={this.props.className} onClick={this.handleClick}>
                 <styled.PlayersContainer>
                     {this.getPlayers()}
                 </styled.PlayersContainer>
@@ -45,6 +52,10 @@ class GameCard extends React.Component<IGameCard, {}> {
                 <styled.TimeSpan>{getTime(this.props.time)}</styled.TimeSpan>
             </div>
         );
+    }
+
+    private handleClick(): void {
+        this.props.clickFunc(this.props.token, GameState[this.props.state]);
     }
 
     private getPlayers(): JSX.Element[] {

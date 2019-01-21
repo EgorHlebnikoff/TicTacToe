@@ -1,9 +1,11 @@
 import * as React from "react";
-import {ButtonContainer, TransparentButton} from "../button/Button";
+import {ButtonContainer, TransparentButton, TransparentLinkButton} from "../button/Button";
 import GameCard, {GameState, IPlayer, PlayerState} from '../gameCard/GameCard';
+import Input from "../input/Input";
 import Modal from "../modal/Modal";
+import Preloader from "../preloader/Preloader";
 import Span from "../span/Span";
-import StyledGameList from './styles';
+import StyledGameList, {PreloaderContainer} from './styles';
 
 interface IGameParams {
     gameToken: string;
@@ -17,6 +19,9 @@ interface IGameParams {
 
 interface IGameListState {
     isModalOpen: boolean;
+    currentGameToken: string;
+    currentGameState: string;
+    isContinueButtonDisabled: boolean;
 }
 
 interface IGameList {
@@ -110,16 +115,25 @@ class GameList extends React.Component<IGameList, IGameListState> {
         return GameState.ENDED;
     }
 
+    private modalInputRef = React.createRef<HTMLInputElement>();
+    private preloaderContainerRef = React.createRef<HTMLDivElement>();
+
     constructor(props: IGameList) {
         super(props);
 
         this.state = {
             isModalOpen: false,
+            currentGameToken: '',
+            currentGameState: '',
+            isContinueButtonDisabled: false,
         };
 
         this.getGame = this.getGame.bind(this);
         this.closeModal = this.closeModal.bind(this);
         this.openModal = this.openModal.bind(this);
+        this.redirectToGameHandler = this.redirectToGameHandler.bind(this);
+        this.modalInputChangeHandler = this.modalInputChangeHandler.bind(this);
+        this.setFocusToModalInput = this.setFocusToModalInput.bind(this);
     }
 
     public render(): JSX.Element {
@@ -132,35 +146,99 @@ class GameList extends React.Component<IGameList, IGameListState> {
     }
 
     private renderModal(): JSX.Element {
+        const state: string = this.state.currentGameState;
+        const spanContent: string = state === 'ENDED'
+            ? 'Вы уверены, что хотите посмотреть результаты игры?'
+            : state === 'PLAYING'
+                ? 'Вы уверены, что хотите наблюдать за этой игрой?'
+                : 'Чтобы присоединиться к игре - введите gameToken';
+
+        const isWaiting: boolean = state === 'WAITING';
+        const {isContinueButtonDisabled} = this.state;
+
         return (
             <Modal
                 key='Modal'
                 title='Подвердить'
                 isOpen={this.state.isModalOpen}
+                afterOpen={this.setFocusToModalInput}
                 onClose={this.closeModal}
                 closeByOutsideClick={true}
                 closeByESC={true}
                 className='verifyRedirectionModal'
             >
-                <Span>Вы уверены, что хотите перейти к игре?</Span>
+                {isWaiting && <PreloaderContainer ref={this.preloaderContainerRef}><Preloader/></PreloaderContainer>}
+                <Span>{spanContent}</Span>
+                {isWaiting && this.getModalInput()}
                 <ButtonContainer>
                     <TransparentButton onClick={this.closeModal}>Нет</TransparentButton>
-                    <TransparentButton className='continue'>Да</TransparentButton>
+                    <TransparentLinkButton
+                        href={`/game/${this.state.currentGameToken}`}
+                        onClick={this.redirectToGameHandler}
+                        disabled={isContinueButtonDisabled}
+                        className={`${isWaiting ? 'joinGame' : ''} ${!isContinueButtonDisabled ? 'continue' : ''}`}
+                    >
+                        Да
+                    </TransparentLinkButton>
                 </ButtonContainer>
             </Modal>
         );
     }
 
-    private openModal(): void {
-        if (this.state.isModalOpen) return;
+    private getModalInput(): JSX.Element {
+        return <Input ref={this.modalInputRef} color="NORMAL" border='full' onChange={this.modalInputChangeHandler}/>;
+    }
 
-        this.setState({isModalOpen: true});
+    private openModal(gameToken: string, state: string): void {
+        if (this.state.isModalOpen) return;
+        const continueButtonState = state === 'WAITING';
+
+        this.setState({
+            isModalOpen: true,
+            currentGameToken: gameToken,
+            currentGameState: state,
+            isContinueButtonDisabled: continueButtonState,
+        });
+    }
+
+    private setFocusToModalInput(): void {
+        if (this.modalInputRef.current === null) return;
+        const input: HTMLInputElement = this.modalInputRef.current;
+
+        input.focus();
     }
 
     private closeModal(): void {
         if (!this.state.isModalOpen) return;
 
-        this.setState({isModalOpen: false});
+        this.setState({
+            isModalOpen: false,
+            currentGameToken: '',
+            currentGameState: '',
+            isContinueButtonDisabled: false,
+        });
+    }
+
+    private modalInputChangeHandler(): void {
+        if (!this.modalInputRef) return;
+        const input: HTMLInputElement = this.modalInputRef.current;
+        const isEmptyValue: boolean = input.value === '';
+
+        if (isEmptyValue && this.state.isContinueButtonDisabled) return;
+        if (!isEmptyValue && !this.state.isContinueButtonDisabled) return;
+
+        this.setState({isContinueButtonDisabled: isEmptyValue});
+    }
+
+    private redirectToGameHandler(e: MouseEvent): void {
+        const eventTarget: HTMLLinkElement = e.target as HTMLLinkElement;
+        if (!eventTarget.classList.contains('joinGame')) return;
+
+        if (!this.preloaderContainerRef) return;
+        const preloaderContainer: HTMLDivElement = this.preloaderContainerRef.current;
+
+        e.preventDefault();
+        preloaderContainer.classList.add('opened');
     }
 
     private getGame(currArray: JSX.Element[], currGame: IGameParams): JSX.Element[] {
@@ -170,7 +248,7 @@ class GameList extends React.Component<IGameList, IGameListState> {
         const state = GameList.getGameState(currGame);
 
         currArray.push((
-            <GameCard key={id} players={players} time={time} state={state} onClick={this.openModal}/>
+            <GameCard key={id} token={id} players={players} time={time} state={state} clickFunc={this.openModal}/>
         ));
 
         return currArray;

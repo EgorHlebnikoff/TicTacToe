@@ -2,23 +2,27 @@ import styled from 'styled-components';
 import {StyledElement} from "../../globalStyles";
 
 export const Annotation: StyledElement = styled('h2')`
+  --font-size: 46px;
+  --font-weight: 700;
   --lines-indent: -120px;
+  --lines-width: 100px;
+  --lines-content: '';
 
   position: relative;
 
   font-family: "Roboto", sans-serif;
-  font-size: 46px;
-  font-weight: 700;
+  font-size: var(--font-size);
+  font-weight: var(--font-weight);
   line-height: 1;
   color: #7966fd;
   text-shadow: -1px -1px 1px rgba(255,255,255,.1), 1px 1px 1px rgba(0,0,0,.5), 3px 6px 10px rgba(238,238,238,0);
   
   &::after, &::before {
-    content: '';
+    content: var(--lines-content);
     display: block;
     position: absolute;
     height: 2px;
-    width: 100px;
+    width: var(--lines-width);
     background-color: #7966fd;
     
     top: calc(50% - 1px);
@@ -30,6 +34,23 @@ export const Annotation: StyledElement = styled('h2')`
   
   &::before {
     right: var(--lines-indent);
+  }
+  
+  @media (max-width: 840px) {
+    --font-size: 36px;
+    --lines-width: 80px;
+    --lines-indent: -100px;
+  }
+  
+  @media (max-width: 620px) {
+    --font-size: 28px;
+    --lines-width: 40px;
+    --lines-indent: -50px;
+  }
+  
+  @media (max-width: 420px) {
+    --font-weight: 500;
+    --lines-content: none;
   }
 `;
 
@@ -54,9 +75,13 @@ export const FieldContainer: StyledElement = styled('section')`
   align-items: center;
   justify-content: space-between;
   
-  padding: 60px 0;
+  padding: 30px 0;
   width: 58%;
   
   box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
   background-color: #fafafa;
+  
+  @media (max-width: 530px) {
+    width: 76%;
+  }
 `;

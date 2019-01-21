@@ -3,6 +3,7 @@ import {ElementToStyle, StyledElement, StylingFunction} from "../../globalStyles
 
 export const Button: StylingFunction = (button: ElementToStyle): StyledElement => styled(button)`
   display: block;
+  text-decoration: none;
   outline: none;
   
   border-radius: 4px;
@@ -21,6 +22,7 @@ export const Button: StylingFunction = (button: ElementToStyle): StyledElement =
   
   &:hover, &:focus {
     cursor: pointer;
+    text-decoration: none;
     box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
     background-color: #5c4fe2;
   }
@@ -34,6 +36,7 @@ export const TransparentButton: StylingFunction = (button: ElementToStyle): Styl
   display: block;
   outline: none;
   border: none;
+  text-decoration: none;
   
   background-color: transparent;
   
@@ -50,6 +53,7 @@ export const TransparentButton: StylingFunction = (button: ElementToStyle): Styl
   text-transform: uppercase;
   
   &:hover, &:focus {
+    text-decoration: none;
     cursor: ${(props) => !props.disabled && 'pointer'};
     color: ${(props) => !props.disabled && '#333' || '#888'};
   }

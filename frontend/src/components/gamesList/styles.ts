@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 import {ElementToStyle, StyledElement, StylingFunction} from "../../globalStyles";
 
-const StyledGamesList: StylingFunction = (item: ElementToStyle): StyledElement => styled(item)`
+export const StyledGamesList: StylingFunction = (item: ElementToStyle): StyledElement => styled(item)`
   --item-width: 200px;
   --grid-columns: 6;
   --grid-gap-size: 20px;
@@ -33,6 +33,22 @@ const StyledGamesList: StylingFunction = (item: ElementToStyle): StyledElement =
   
   @media (max-width: 460px) {
     --grid-columns: 1;
+  }
+`;
+
+export const PreloaderContainer: StyledElement = styled('div')`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-height: 1px;
+  visibility: hidden;
+  
+  transition: max-height .2s linear;
+  
+  &.opened {
+    max-height: 300px;
+    visibility: visible;
   }
 `;
 

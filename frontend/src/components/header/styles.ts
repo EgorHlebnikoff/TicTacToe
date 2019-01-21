@@ -8,7 +8,7 @@ export const Title: StyledElement = styled('h1')`
     color: #fafafa;
     text-shadow: -1px -1px 1px rgba(255,255,255,.1), 1px 1px 1px rgba(0,0,0,.5), 3px 6px 10px rgba(238,238,238,0);
     
-    @media (max-width: 500px) {
+    @media (max-width: 526px) {
         font-size: 54px;
     }
 `;

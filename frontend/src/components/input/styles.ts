@@ -18,12 +18,12 @@ const Input: StylingFunction = (input: ElementToStyle): StyledElement => styled(
   
   border: none;
   outline: none;
-  border-bottom: 2px solid var(--non-hover-color);
+  border${(props) => props.border !== 'full' ? '-bottom' : ''}: 2px solid var(--non-hover-color);
+  ${(props) => props.border === 'full' ? 'border-radius: 4px;' : ''}
   
   &:hover, &:focus {
     outline: none;
-    border-bottom-color: var(--hover-color);
-    
+    border${(props) => props.border !== 'full' ? '-bottom' : ''}-color: var(--hover-color);
     color: #5c4fe2;
     
     &::placeholder {

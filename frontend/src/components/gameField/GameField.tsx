@@ -46,7 +46,7 @@ export default class GameField extends React.Component<IGameField, {}> {
             ? <Svg isActive={false} name='cross'/>
             : <Svg isActive={false} name='circle'/>;
 
-        return <FieldCell key={index} index={index} clickHandler={this.props.turnHandler} svg={svg}/>;
+        return <FieldCell key={index} index={index} svg={svg}/>;
     }
 
     private getFieldCells(): JSX.Element[] {

@@ -17,7 +17,10 @@ class FieldCell extends React.Component<IFieldCell, {}> {
 
     public render(): JSX.Element {
         return (
-            <div className={this.props.className} onClick={this.handleClick}>
+            <div
+                className={`${this.props.className} ${!this.props.clickHandler ? 'active' : ''}`}
+                onClick={this.handleClick}
+            >
                 <styled.SVGContainer>{this.props.svg}</styled.SVGContainer>
             </div>
         );
