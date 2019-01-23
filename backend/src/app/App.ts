@@ -1,11 +1,14 @@
+import * as bodyParser from 'body-parser';
 import * as express from 'express';
-import * as path from 'path';
 import * as webpack from 'webpack';
 import * as middleware from 'webpack-dev-middleware';
 import * as config from '../../frontend/config/webpack.config';
+import GamesController from '../controller/GamesController';
+import StaticController from '../controller/StaticController';
 
-interface IRoute {
+export interface IRoute {
     path: string;
+    method: string;
 
     callback(req: any, res: any): void;
 }
@@ -14,23 +17,14 @@ class App {
     private app;
     private port = 5000;
     private routes: IRoute[] = [
-        {
-            callback: (req, res) => {
-                res.sendFile(path.join(__dirname, "../../public/index.html"));
-            },
-            path: '/',
-        },
-        {
-            callback: (req, res) => {
-                res.sendFile(path.join(__dirname, "../../public/index.html"));
-            },
-            path: '/game/:id',
-        },
+        StaticController.indexRoute,
+        StaticController.gamePageRoute,
+        GamesController.createGameRoute,
+        GamesController.gamesListRoute,
     ];
 
     constructor() {
         this.app = express();
-        this.mountRoutes();
         this.initializeServer = this.initializeServer.bind(this);
     }
 
@@ -41,6 +35,9 @@ class App {
             noInfo: true,
             publicPath: config.output.publicPath,
         }));
+
+        this.app.use(bodyParser.json());
+        this.mountRoutes();
 
         this.app.listen(this.port, (error: Error) => {
             if (error) {
@@ -56,13 +53,16 @@ class App {
     private mountRoutes(): void {
         const router = express.Router();
 
-        const callbackfn = (item: IRoute): void => {
-            router.get(item.path, item.callback);
+        const callbackFunc = (item: IRoute): void => {
+            if (item.method === 'get')
+                router.get(item.path, item.callback);
+            else
+                router.post(item.path, item.callback);
 
             this.app.use(item.path, router);
         };
 
-        this.routes.forEach(callbackfn);
+        this.routes.forEach(callbackFunc);
     }
 }
 

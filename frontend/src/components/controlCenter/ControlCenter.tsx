@@ -1,5 +1,6 @@
 import * as React from 'react';
-import {Button, ButtonContainer, TransparentButton} from '../button/Button';
+import Cookies from 'universal-cookie';
+import {Button, ButtonContainer, TransparentButton, TransparentLinkButton} from '../button/Button';
 import Input from '../input/Input';
 import Modal from '../modal/Modal';
 import Preloader from '../preloader/Preloader';
@@ -13,6 +14,7 @@ interface IControlCenterState {
     isModalOpen: boolean;
     isGameReady: boolean;
     annotationToGameCreation: string;
+    currentGameToken: string;
 }
 
 export default class ControlCenter extends React.Component<any, IControlCenterState> {
@@ -25,6 +27,7 @@ export default class ControlCenter extends React.Component<any, IControlCenterSt
             isModalOpen: false,
             isGameReady: false,
             annotationToGameCreation: 'Ваша игра готовится...',
+            currentGameToken: '',
         };
 
         this.openModal = this.openModal.bind(this);
@@ -67,21 +70,23 @@ export default class ControlCenter extends React.Component<any, IControlCenterSt
                 <Span>{annotationToGameCreation}</Span>
                 <ButtonContainer>
                     <TransparentButton onClick={this.closeModal}>Отменить</TransparentButton>
-                    <TransparentButton
+                    <TransparentLinkButton
                         className={continueButtonClassName}
+                        href={`/game/${this.state.currentGameToken}`}
                         disabled={!isGameReady}
                     >
                         Перейти
-                    </TransparentButton>
+                    </TransparentLinkButton>
                 </ButtonContainer>
             </Modal>
         );
     }
 
-    private setGameReady(): void {
+    private setGameReady(gameToken: string): void {
         this.setState({
             isGameReady: true,
             annotationToGameCreation: 'Игра готова! Можно приступать!',
+            currentGameToken: gameToken,
         });
     }
 
@@ -115,6 +120,32 @@ export default class ControlCenter extends React.Component<any, IControlCenterSt
         }
 
         this.openModal();
-        console.log(inputValue);
+
+        fetch('/games/new', {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                userName: inputValue,
+                size: 3,
+            }),
+        })
+            .then((response) => response.json())
+            .then((response) => {
+                const {status, code, gameToken, accessToken} = response;
+                if (status === 'ok' && code === 0) {
+                    const cookies = new Cookies();
+                    let gameCookies = cookies.get('games');
+                    if (!gameCookies) gameCookies = {};
+
+                    gameCookies[gameToken] = {
+                        accessToken,
+                        type: 'owner',
+                    };
+                    cookies.set('games', gameCookies, {path: '/'});
+
+                    this.setGameReady(gameToken);
+                }
+            })
+            .catch((error: Error) => console.error('Error:', error));
     }
 }

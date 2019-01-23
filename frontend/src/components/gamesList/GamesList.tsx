@@ -18,6 +18,7 @@ interface IGameParams {
 }
 
 interface IGameListState {
+    games: JSX.Element[];
     isModalOpen: boolean;
     currentGameToken: string;
     currentGameState: string;
@@ -27,63 +28,6 @@ interface IGameListState {
 interface IGameList {
     className?: string;
 }
-
-const games: IGameParams[] = [
-    {
-        gameToken: '123123',
-        owner: 'Andry Heineken',
-        opponent: '',
-        size: 3,
-        gameDuration: 60,
-        gameResult: '',
-        state: 'ready',
-    },
-    {
-        gameToken: '1231as',
-        owner: 'Andry Heineken',
-        opponent: 'Boris Guinnes',
-        size: 3,
-        gameDuration: 12312,
-        gameResult: '',
-        state: 'playing',
-    },
-    {
-        gameToken: '1231ad',
-        owner: 'Andry Heineken',
-        opponent: 'Boris Guinnes',
-        size: 3,
-        gameDuration: 12312,
-        gameResult: 'owner',
-        state: 'done',
-    },
-    {
-        gameToken: '1231a4',
-        owner: 'Andry Heineken',
-        opponent: 'Boris Guinnes',
-        size: 3,
-        gameDuration: 12312,
-        gameResult: 'opponent',
-        state: 'done',
-    },
-    {
-        gameToken: '1231a8',
-        owner: 'Andry Heineken',
-        opponent: 'Boris Guinnes',
-        size: 3,
-        gameDuration: 12312,
-        gameResult: 'draw',
-        state: 'done',
-    },
-    {
-        gameToken: '1231ao',
-        owner: 'Andry Heineken',
-        opponent: 'Boris Guinnes',
-        size: 3,
-        gameDuration: 12312,
-        gameResult: 'draw',
-        state: 'done',
-    },
-];
 
 class GameList extends React.Component<IGameList, IGameListState> {
     private static getGamePlayers(playersParams: { owner: string; opponent: string; gameResult: string; }): IPlayer[] {
@@ -122,6 +66,7 @@ class GameList extends React.Component<IGameList, IGameListState> {
         super(props);
 
         this.state = {
+            games: [],
             isModalOpen: false,
             currentGameToken: '',
             currentGameState: '',
@@ -129,6 +74,7 @@ class GameList extends React.Component<IGameList, IGameListState> {
         };
 
         this.getGame = this.getGame.bind(this);
+        this.fetchGames = this.fetchGames.bind(this);
         this.closeModal = this.closeModal.bind(this);
         this.openModal = this.openModal.bind(this);
         this.redirectToGameHandler = this.redirectToGameHandler.bind(this);
@@ -136,10 +82,14 @@ class GameList extends React.Component<IGameList, IGameListState> {
         this.setFocusToModalInput = this.setFocusToModalInput.bind(this);
     }
 
+    public componentWillMount(): void {
+        this.fetchGames();
+    }
+
     public render(): JSX.Element {
         return (
             <section key="gamesList" className={this.props.className}>
-                {this.getCards()}
+                {this.state.games.length === 0 ? <Span>Список игр пуст</Span> : this.state.games}
                 {this.state.isModalOpen && this.renderModal()}
             </section>
         );
@@ -254,8 +204,17 @@ class GameList extends React.Component<IGameList, IGameListState> {
         return currArray;
     }
 
-    private getCards(): JSX.Element[] {
-        return games.reduce(this.getGame, []);
+    private fetchGames() {
+        fetch('/games/list', {
+            headers: {'Content-Type': "application/json"},
+        })
+            .then((response) => response.json())
+            .then((response) => {
+                this.setState({games: response.games.reduce(this.getGame, [])});
+
+                setTimeout(this.fetchGames, 5000);
+            })
+            .catch((error: Error) => console.error('Error:', error));
     }
 }
 

@@ -17,20 +17,49 @@ export class Game {
     @Column("varchar")
     owner: string;
 
-    @Column("varchar", {length: 12, unique: true,})
+    @Column({
+        type: "varchar",
+        length: 12,
+        default: '',
+    })
     ownerAccessToken: string;
 
-    @Column("varchar")
+    @Column({
+        type: "varchar",
+        default: '',
+    })
     opponent: string;
 
-    @Column("varchar", {length: 12, unique: true,})
+    @Column({
+        type: "varchar",
+        length: 12,
+        default: '',
+    })
     opponentAccessToken: string;
 
-    @Column("int")
+    @Column({
+        type: "int",
+        default: 3,
+    })
     size: number;
 
-    @Column("int")
+    @Column({
+        type: "int",
+        default: 0,
+    })
     gameDuration: number;
+
+    @Column({
+        type: "timestamp",
+        default: new Date(),
+    })
+    timeOfCreation: number;
+
+    @Column({
+        type: "timestamp",
+        default: new Date(),
+    })
+    lastActivityTime: number;
 
     @Column({
         type: "enum",

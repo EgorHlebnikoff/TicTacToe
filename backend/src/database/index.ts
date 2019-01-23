@@ -1,4 +1,4 @@
-import {ConnectionOptions, createConnection} from "typeorm";
+import {ConnectionOptions} from "typeorm";
 import {Game} from '../entity/Game';
 
 const options: ConnectionOptions = {
@@ -13,4 +13,4 @@ const options: ConnectionOptions = {
     entities: [Game],
 };
 
-export default createConnection(options);
+export default options;
