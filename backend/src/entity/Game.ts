@@ -38,7 +38,7 @@ export class Game {
     opponentAccessToken: string;
 
     @Column("varchar", {array: true})
-    field: string[][];
+    field: string[];
 
     @Column({
         type: "int",

@@ -22,11 +22,7 @@ class GamesController {
         newGame.gameToken = randomAlphanumericString(6);
         newGame.timeOfCreation = new Date();
         newGame.lastActivityTime = new Date();
-        newGame.field = [
-            ['?', '?', '?'],
-            ['?', '?', '?'],
-            ['?', '?', '?'],
-        ];
+        newGame.field = ['???', '???', '???'];
     }
 
     public createGameRoute: IRoute;

@@ -2,9 +2,9 @@ import * as React from 'react';
 import * as styled from './styles';
 
 interface IFieldCell {
-    index: number;
+    index: string;
     svg?: JSX.Element;
-    clickHandler?: (index: number) => void;
+    clickHandler?: ([row, column]: number[]) => void;
     className?: string;
 }
 
@@ -29,7 +29,16 @@ class FieldCell extends React.Component<IFieldCell, {}> {
     private handleClick(): void {
         if (!this.props.clickHandler) return;
 
-        this.props.clickHandler(this.props.index);
+        const [row, column]: number[] = this.props.index.split('_').reduce(
+            (acc: number[], item: string): number[] => {
+                acc.push(parseInt(item, 10));
+
+                return acc;
+            },
+            [],
+        );
+
+        this.props.clickHandler([row, column]);
     }
 }
 

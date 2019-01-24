@@ -7,7 +7,7 @@ import MainScreen from './components/MainScreen';
 const App = () => (
     <div>
         <Route exact={true} path='/' component={MainScreen}/>
-        <Route path='/game' component={GameScreen}/>
+        <Route path='/game/:gameToken' component={GameScreen}/>
     </div>
 );
 

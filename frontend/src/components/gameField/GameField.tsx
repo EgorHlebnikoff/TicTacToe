@@ -2,18 +2,17 @@ import * as React from 'react';
 import getTime from '../../modules/date/DateModule';
 import Button from "../button/Button";
 import FieldCell from "../fieldCell/FieldCell";
+import {GameState} from '../GameScreen';
 import Span from "../span/Span";
 import Svg from "../svg/Svg";
 import * as styled from "./styles";
-
-enum GameState {WAITING, PLAYER_TURN, OPPONENT_TURN, WON, DRAW}
 
 interface IGameField {
     gameState?: GameState;
     field?: string[];
     winnerName?: string;
     time: number;
-    turnHandler: (index: number) => void;
+    turnHandler: ([row, column]: number[]) => void;
 }
 
 export default class GameField extends React.Component<IGameField, {}> {
@@ -22,7 +21,7 @@ export default class GameField extends React.Component<IGameField, {}> {
     constructor(props: IGameField) {
         super(props);
 
-        this.getCell = this.getCell.bind(this);
+        this.getCells = this.getCells.bind(this);
     }
 
     public render(): JSX.Element {
@@ -36,20 +35,28 @@ export default class GameField extends React.Component<IGameField, {}> {
         );
     }
 
-    private getCell(currCell: string, index: number): JSX.Element {
-        currCell = currCell.toLowerCase();
+    private getCells(acc: JSX.Element[], currRow: string, row: number): JSX.Element[] {
+        currRow.split('').forEach((currCell: string, column: number) => {
+            currCell = currCell.toLowerCase();
+            const key: number = (row * currRow.length) + column;
 
-        if (this.cellsTypes.every((item: string) => item !== currCell))
-            return <FieldCell key={index} index={index} clickHandler={this.props.turnHandler}/>;
+            if (this.cellsTypes.every((item: string) => item !== currCell)) {
+                acc.push(<FieldCell key={key} index={`${row}_${column}`} clickHandler={this.props.turnHandler}/>);
 
-        const svg = currCell === 'x' || currCell === 'x'
-            ? <Svg isActive={false} name='cross'/>
-            : <Svg isActive={false} name='circle'/>;
+                return;
+            }
 
-        return <FieldCell key={index} index={index} svg={svg}/>;
+            const svg = currCell === 'x' || currCell === 'x'
+                ? <Svg isActive={false} name='cross'/>
+                : <Svg isActive={false} name='circle'/>;
+
+            acc.push(<FieldCell key={key} index={`${row}_${column}`} svg={svg}/>);
+        });
+
+        return acc;
     }
 
     private getFieldCells(): JSX.Element[] {
-        return this.props.field.map(this.getCell);
+        return this.props.field.reduce(this.getCells, []);
     }
 }
