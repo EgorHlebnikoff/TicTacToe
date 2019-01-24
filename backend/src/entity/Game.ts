@@ -1,9 +1,9 @@
 import 'reflect-metadata';
 import {Column, Entity, PrimaryColumn, PrimaryGeneratedColumn} from 'typeorm';
 
-enum GameResult {NO_RESULT = '', OWNER = 'owner', OPPONENT = 'opponent', DRAW = 'draw'}
+export enum GameResult {NO_RESULT = '', OWNER = 'owner', OPPONENT = 'opponent', DRAW = 'draw'}
 
-enum GameState {READY = 'ready', PLAYING = 'playing', DONE = 'done'}
+export enum GameState {READY = 'ready', PLAYING = 'playing', DONE = 'done'}
 
 /* tslint:disable */
 @Entity()
@@ -37,6 +37,9 @@ export class Game {
     })
     opponentAccessToken: string;
 
+    @Column("varchar", {array: true})
+    field: string[][];
+
     @Column({
         type: "int",
         default: 3,
@@ -49,17 +52,11 @@ export class Game {
     })
     gameDuration: number;
 
-    @Column({
-        type: "timestamp",
-        default: new Date(),
-    })
-    timeOfCreation: number;
+    @Column("timestamp")
+    timeOfCreation: Date;
 
-    @Column({
-        type: "timestamp",
-        default: new Date(),
-    })
-    lastActivityTime: number;
+    @Column("timestamp")
+    lastActivityTime: Date;
 
     @Column({
         type: "enum",

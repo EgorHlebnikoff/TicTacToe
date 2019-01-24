@@ -7,23 +7,21 @@ import Preloader from '../preloader/Preloader';
 import Section from '../section/Section';
 import Span from "../span/Span";
 
-enum ButtonState {NORMAL = "NORMAL", ERROR = "ERROR"}
-
 interface IControlCenterState {
-    buttonState: ButtonState;
     isModalOpen: boolean;
     isGameReady: boolean;
     annotationToGameCreation: string;
     currentGameToken: string;
 }
 
-export default class ControlCenter extends React.Component<any, IControlCenterState> {
-    private textInputRef = React.createRef<HTMLInputElement>();
+interface IControlCenterProps {
+    userNameInputRef: React.RefObject<HTMLInputElement>;
+}
 
+export default class ControlCenter extends React.Component<IControlCenterProps, IControlCenterState> {
     constructor(props: any) {
         super(props);
         this.state = {
-            buttonState: ButtonState.NORMAL,
             isModalOpen: false,
             isGameReady: false,
             annotationToGameCreation: 'Ваша игра готовится...',
@@ -41,8 +39,7 @@ export default class ControlCenter extends React.Component<any, IControlCenterSt
         return (
             <Section backgroundColor='#fafafa'>
                 <Input
-                    ref={this.textInputRef}
-                    color={this.state.buttonState}
+                    ref={this.props.userNameInputRef}
                     onChange={this.handleInputChange}
                     placeholder="Введите ваше имя"
                     type="text"
@@ -99,21 +96,22 @@ export default class ControlCenter extends React.Component<any, IControlCenterSt
     }
 
     private handleInputChange(): void {
-        if (this.state.buttonState === ButtonState.NORMAL) return;
+        const input: HTMLInputElement = this.props.userNameInputRef.current;
+        if (!input) return;
 
-        const input = this.textInputRef.current;
-        if (!input || input.value === '') return;
+        if (!input.classList.contains('error')) return;
+        if (input.value === '') return;
 
-        this.setState({buttonState: ButtonState.NORMAL});
+        input.classList.remove('error');
     }
 
     private tryToCreateGame(): void {
-        const input = this.textInputRef.current;
+        const input: HTMLInputElement = this.props.userNameInputRef.current;
         if (!input) return;
 
         const inputValue: string = input.value;
         if (inputValue === '') {
-            this.setState({buttonState: ButtonState.ERROR});
+            input.classList.add('error');
             input.focus();
 
             return;

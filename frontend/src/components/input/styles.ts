@@ -2,8 +2,13 @@ import styled from 'styled-components';
 import {ElementToStyle, StyledElement, StylingFunction} from "../../globalStyles";
 
 const Input: StylingFunction = (input: ElementToStyle): StyledElement => styled(input)`
-  --non-hover-color: ${(props) => props.color === "NORMAL" ? "#7966fd" : '#f75757'};
-  --hover-color: ${(props) => props.color === "NORMAL" ? "#5c4fe2" : '#f75757'};
+  --non-hover-color: #7966fd;
+  --hover-color: #7966fd;
+  
+  &.error {
+    --non-hover-color: #f75757;
+    --hover-color: #f75757;
+  }
 
   width: 300px;
   padding: 10px 0 10px 20px;

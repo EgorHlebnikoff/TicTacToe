@@ -21,6 +21,7 @@ class App {
         StaticController.gamePageRoute,
         GamesController.createGameRoute,
         GamesController.gamesListRoute,
+        GamesController.joinGameRoute,
     ];
 
     constructor() {

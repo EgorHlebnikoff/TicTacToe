@@ -6,14 +6,16 @@ import GamesList from "./gamesList/GamesList";
 import Header from './header/Header';
 
 class MainScreen extends React.Component {
+    private userNameInputRef: React.RefObject<HTMLInputElement> = React.createRef<HTMLInputElement>();
+
     public render(): JSX.Element[] {
         return ([
             <GlobalStyle key='globalStyles'/>,
             <Header key='header'/>,
             (
                 <Container key={'container'}>
-                    <ControlCenter/>
-                    <GamesList/>
+                    <ControlCenter userNameInputRef={this.userNameInputRef}/>
+                    <GamesList userNameInputRef={this.userNameInputRef}/>
                 </Container>
             ),
         ]);
