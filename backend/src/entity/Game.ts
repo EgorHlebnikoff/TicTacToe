@@ -11,7 +11,10 @@ export class Game {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @PrimaryColumn("varchar", {length: 6, unique: true,})
+    @PrimaryColumn("varchar", {
+        length: 6,
+        unique: true,
+    })
     gameToken: string;
 
     @Column("varchar")

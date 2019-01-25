@@ -8,6 +8,7 @@ import Header from './header/Header';
 import PlayerBar from './playerBar/PlayerBar';
 
 export enum GameState {WAITING, PLAYING, WON, DRAW}
+
 export enum UserType {OWNER, OPPONENT, VIEWER}
 
 interface IMatchParams {
@@ -105,8 +106,7 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
     }
 
     private increaseTime(): void {
-        const time = this.state.time + 1000;
-        this.setState({time});
+        this.setState({time: this.state.time});
     }
 
     private handleTurn([row, column]: number[]) {
@@ -249,7 +249,12 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
                 const {status, code, youTurn, gameDuration, field, winner} = response;
                 if (status !== 'ok' || code !== 0) return;
 
-                const gameState = winner && winner !== '' ? GameState.WON : this.state.gameState;
+                const gameState = winner && winner !== ''
+                    ? winner === 'draw'
+                        ? GameState.DRAW
+                        : GameState.WON
+                    : this.state.gameState;
+
                 this.setState({
                     youTurn,
                     time: gameDuration,

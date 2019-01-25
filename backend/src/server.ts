@@ -1,6 +1,5 @@
 import 'reflect-metadata';
-import {createConnection} from "typeorm";
 import initializeServer from './app/App';
-import options from './database';
+import connectToDB from './database/index';
 
-createConnection(options).then(initializeServer).catch((error: Error) => console.log(error));
+connectToDB.then(initializeServer).catch((error: Error) => console.log(error));

@@ -1,18 +1,12 @@
-import {getRepository, Repository} from 'typeorm';
-import {IRoute} from '../app/App';
+import * as express from 'express';
+import {FindOneOptions, getRepository, Repository} from 'typeorm';
+import {IRoute} from '../app/AppTypes';
 import {Game, GameResult, GameState} from '../entity/Game';
 import getError from '../service/ErrorHandler';
+import checkGameState from '../utils/Checker';
+import subtractDates from '../utils/DatesWorker';
 import {randomAlphanumericString} from "../utils/Random";
-
-interface IGameParams {
-    gameToken: string;
-    owner: string;
-    opponent: string;
-    size: number;
-    gameDuration: number;
-    gameResult: string;
-    state: string;
-}
+import {IMakeStepParams, IRequestParams, ISortedGames} from "./ControllersTypes";
 
 class GamesController {
     private static setNewGameParams(newGame: Game, {userName, size}: { userName: string, size: number }) {
@@ -25,162 +19,187 @@ class GamesController {
         newGame.field = ['???', '???', '???'];
     }
 
-    private static checkRows(field: string[]): boolean {
-        return field.some((currRow: string) => currRow === 'XXX' || currRow === 'OOO');
+    private static getSurrenderData(gameDuration: number, nowTimestamp: Date, requesterType: string) {
+        return {
+            whomTurn: 'none',
+            gameDuration,
+            lastActivityTime: nowTimestamp,
+            gameResult: requesterType === 'owner' ? GameResult.OPPONENT : GameResult.OWNER,
+            state: GameState.DONE,
+        };
     }
 
-    private static checkColumns(field: string[]): boolean {
-        return [0, 1, 2].some(
-            (colNum: number): boolean => {
-                const isWonByX = field.every(
-                    (currRow: string): boolean => currRow.split('')[colNum] === 'X',
-                );
-
-                const isWonByO = field.every(
-                    (currRow: string): boolean => currRow.split('')[colNum] === 'O',
-                );
-
-                return isWonByX || isWonByO;
-            },
-        );
+    private static getSetStartData(opponentName: string, opponentToken: string, currTime: Date) {
+        return {
+            opponent: opponentName,
+            opponentAccessToken: opponentToken,
+            state: GameState.PLAYING,
+            lastActivityTime: currTime,
+            timeOfStart: currTime,
+            whomTurn: 'owner',
+        };
     }
 
-    private static checkDiagonals(field: string[], indexes: number[]): boolean {
-        const isWonByX = field.every((currRow: string, rowNum: number): boolean => {
-            return currRow.split('')[indexes[rowNum]] === 'X';
-        });
+    private static getGameResult(gameState: string, who?: string): GameResult {
+        if (gameState === 'playing') return GameResult.NO_RESULT;
+        if (gameState === 'draw') return GameResult.DRAW;
 
-        const isWonByO = field.every((currRow: string, rowNum: number): boolean => {
-            return currRow.split('')[indexes[rowNum]] === 'O';
-        });
+        if (who === 'owner') return GameResult.OWNER;
 
-        return isWonByX || isWonByO;
+        return GameResult.OPPONENT;
     }
 
-    private static isWon(field: string[]): boolean {
-        return this.checkRows(field)
-            || this.checkColumns(field)
-            || this.checkDiagonals(field, [0, 1, 2])
-            || this.checkDiagonals(field, [2, 1, 0]);
-    }
+    private static makeStep(field: string[], {row, column, who}: IMakeStepParams): string[] {
+        return field.map((currRow: string, rowNum: number): string => {
+            if (rowNum !== row) return currRow;
 
-    private static isDraw(field: string[]): boolean {
-        return field.every((currRow: string): boolean => {
-            return currRow.split('').every((currCol: string): boolean => currCol !== '?');
+            return currRow.split('').map((currCol: string, colNum: number): string => {
+                if (colNum !== column) return currCol;
+
+                return who === 'owner' ? 'X' : 'O';
+            }).join('');
         });
     }
 
-    private static checkGameState(field: string[]): string {
-        if (this.isWon(field)) return 'won';
-        if (this.isDraw(field)) return 'draw';
+    private static getWinnerName(game: Game): string {
+        const gameResult = game.gameResult;
+        if (gameResult === GameResult.NO_RESULT) return '';
+        if (gameResult === GameResult.DRAW) return 'draw';
+        if (gameResult === GameResult.OWNER) return game.owner;
 
-        return 'playing';
+        return game.opponent;
     }
 
-    public createGameRoute: IRoute;
-    public gamesListRoute: IRoute;
-    public joinGameRoute: IRoute;
-    public getGameDataRoute: IRoute;
-    public getGameStatusRoute: IRoute;
-    public handlerSurrenderRoute: IRoute;
-    public doStepRoute: IRoute;
+    public routes: IRoute[];
 
+    private currParams: IRequestParams;
+    private accessToken: string;
     private readonly MAX_INACTIVITY_TIME: number = 300000;
 
     constructor() {
-        this.createGameRoute = {
-            callback: this.createGame.bind(this),
-            path: '/games/new',
-            method: 'post',
-        };
+        this.routes = [
+            {
+                callback: this.createGame.bind(this),
+                path: '/games/new',
+                method: 'post',
+            },
+            {
+                callback: this.getListOfGames.bind(this),
+                path: '/games/list',
+                method: 'get',
+            },
+            {
+                callback: this.joinGame.bind(this),
+                path: '/games/join',
+                method: 'post',
+            },
+            {
+                callback: this.getGameData.bind(this),
+                path: '/games/get',
+                method: 'get',
+            },
+            {
+                callback: this.getGameStatus.bind(this),
+                path: '/games/state',
+                method: 'get',
+            },
+            {
+                callback: this.handleSurrender.bind(this),
+                path: '/games/surrender',
+                method: 'post',
+            },
+            {
+                callback: this.doStep.bind(this),
+                path: '/games/do_step',
+                method: 'post',
+            },
+        ];
 
-        this.gamesListRoute = {
-            callback: this.getListOfGames.bind(this),
-            path: '/games/list',
-            method: 'get',
-        };
+        this.sortGames = this.sortGames.bind(this);
+    }
 
-        this.joinGameRoute = {
-            callback: this.joinGame.bind(this),
-            path: '/games/join',
-            method: 'post',
-        };
+    private getAccessToken(req: express.Request): void {
+        this.accessToken = req.header("Access-Token");
+    }
 
-        this.getGameDataRoute = {
-            callback: this.getGameData.bind(this),
-            path: '/games/get',
-            method: 'get',
-        };
+    private getParams(req: express.Request, ...params: string[]): void {
+        this.currParams = {...req.body, error: false};
 
-        this.getGameStatusRoute = {
-            callback: this.getGameStatus.bind(this),
-            path: '/games/state',
-            method: 'get',
-        };
+        for (const parameter of params) {
+            if (this.currParams[parameter] || this.currParams[parameter] === 0) continue;
 
-        this.handlerSurrenderRoute = {
-            callback: this.handleSurrender.bind(this),
-            path: '/games/surrender',
-            method: 'post',
-        };
+            this.currParams.error = true;
+            this.currParams.message = `${parameter} parameter wasn't provided`;
 
-        this.doStepRoute = {
-            callback: this.doStep.bind(this),
-            path: '/games/do_step',
-            method: 'post',
+            return;
+        }
+
+        return;
+    }
+
+    private getAccessTokenCriteria(): FindOneOptions {
+        return {
+            where: [
+                {ownerAccessToken: this.accessToken},
+                {opponentAccessToken: this.accessToken},
+            ],
         };
     }
 
-    private async doStep(req: any, res: any) {
-        const accessToken = req.header("Access-Token");
-        if (!accessToken) return res.json(getError("Access-Token header wasn't provided", 403));
+    private getRequesterType(game: Game): string {
+        return game.ownerAccessToken === this.accessToken ? 'owner' : 'opponent';
+    }
 
-        const {row, column} = req.body;
-        if (!row && row !== 0) return res.json(getError("row parameter wasn't provided"));
-        if (!column && column !== 0) return res.json(getError("column parameter wasn't provided"));
+    private sortGames(currObj: ISortedGames, currGame: Game): ISortedGames {
+        if (currGame.state === GameState.DONE) {
+            currObj.correctGames.push({...currGame});
+
+            return currObj;
+        }
+
+        const deltaTime: number = currObj.currTimestamp.getTime() - currGame.lastActivityTime.getTime();
+        if (deltaTime <= this.MAX_INACTIVITY_TIME)
+            currObj.correctGames.push({...currGame});
+
+        return currObj;
+    }
+
+    private async doStep(req: express.Request, res: express.Response) {
+        this.getAccessToken(req);
+        if (!this.accessToken) return res.json(getError("Access-Token header wasn't provided", 403));
+
+        this.getParams(req, 'row', 'column');
+
+        const {row, column, error, message}: IRequestParams = this.currParams;
+        if (error) return res.json(getError(message));
 
         const repository: Repository<Game> = getRepository(Game);
         const nowTimestamp: Date = new Date();
 
+        let game: Game;
         try {
-            const game = await repository.findOne({
-                where: [
-                    {ownerAccessToken: accessToken},
-                    {opponentAccessToken: accessToken},
-                ],
-            });
+            game = await repository.findOne(this.getAccessTokenCriteria());
+        } catch (error) {
+            return res.json(getError(error, 404));
+        }
 
-            const who: string = game.ownerAccessToken === accessToken ? 'owner' : 'opponent';
-            const gameDuration: number = nowTimestamp.getTime() - game.timeOfStart.getTime();
-            const field = game.field.map((currRow: string, rowNum: number): string => {
-                if (rowNum !== row) return currRow;
+        const who: string = this.getRequesterType(game);
+        const gameDuration: number = subtractDates(nowTimestamp, game.timeOfStart);
+        const field: string[] = GamesController.makeStep(game.field, {row, column, who});
+        const gameState = checkGameState(field);
+        const state: GameState = gameState === 'playing' ? GameState.PLAYING : GameState.DONE;
+        const gameResult: GameResult = GamesController.getGameResult(gameState, who);
 
-                return currRow.split('').map((currCol: string, colNum: number): string => {
-                    if (colNum !== column) return currCol;
+        const updateParams = {
+            whomTurn: who === 'owner' ? 'opponent' : 'owner',
+            gameDuration,
+            field,
+            lastActivityTime: nowTimestamp,
+            state,
+            gameResult,
+        };
 
-                    return who === 'owner' ? 'X' : 'O';
-                }).join('');
-            });
-
-            const gameState = GamesController.checkGameState(field);
-            const state: GameState = gameState === 'playing' ? GameState.PLAYING : GameState.DONE;
-            const gameResult: GameResult = gameState === ''
-                ? GameResult.NO_RESULT
-                : gameState === 'draw'
-                    ? GameResult.DRAW
-                    : who === 'owner'
-                        ? GameResult.OWNER
-                        : GameResult.OPPONENT;
-
-            const updateParams = {
-                whomTurn: who === 'owner' ? 'opponent' : 'owner',
-                gameDuration,
-                field,
-                lastActivityTime: nowTimestamp,
-                state,
-                gameResult,
-            };
-
+        try {
             await repository.update({gameToken: game.gameToken}, updateParams);
 
             res.json({
@@ -188,134 +207,121 @@ class GamesController {
                 code: 0,
             });
         } catch (error) {
-            res.json(getError("Game not found", 404));
+            res.json(getError(error, 500));
         }
     }
 
-    private async handleSurrender(req: any, res: any) {
-        const accessToken = req.header("Access-Token");
-        if (!accessToken) return res.json(getError("Access-Token header wasn't provided", 403));
+    private async handleSurrender(req: express.Request, res: express.Response) {
+        this.getAccessToken(req);
+        if (!this.accessToken) return res.json(getError("Access-Token header wasn't provided", 403));
 
         const repository: Repository<Game> = getRepository(Game);
         const nowTimestamp: Date = new Date();
 
+        let game: Game;
         try {
-            const game = await repository.findOne({
-                where: [
-                    {ownerAccessToken: accessToken},
-                    {opponentAccessToken: accessToken},
-                ],
-            });
-
-            const who: string = game.ownerAccessToken === accessToken ? 'owner' : 'opponent';
-            const gameDuration: number = nowTimestamp.getTime() - game.timeOfStart.getTime();
-
-            const updateParams = {
-                whomTurn: 'none',
-                gameDuration,
-                lastActivityTime: nowTimestamp,
-                gameResult: who === 'owner' ? GameResult.OPPONENT : GameResult.OWNER,
-                state: GameState.DONE,
-            };
-
-            await repository.update({gameToken: game.gameToken}, updateParams);
-
-            res.json({
-                status: 'ok',
-                code: 0,
-            });
+            game = await repository.findOne(this.getAccessTokenCriteria());
         } catch (error) {
-            res.json(getError("Game not found", 404));
+            return res.json(getError(error, 404));
         }
+
+        const who: string = this.getRequesterType(game);
+        const gameDuration: number = subtractDates(nowTimestamp, game.timeOfStart);
+
+        try {
+            await repository.update(
+                {gameToken: game.gameToken},
+                GamesController.getSurrenderData(gameDuration, nowTimestamp, who),
+            );
+        } catch (error) {
+            res.json(getError(error, 500));
+        }
+
+        res.json({
+            status: 'ok',
+            code: 0,
+        });
     }
 
-    private async getGameStatus(req: any, res: any) {
-        const getWinnerName: (game: Game) => string = (game: Game): string => {
-            const gameResult = game.gameResult;
-            if (gameResult === GameResult.DRAW || gameResult === GameResult.NO_RESULT) return '';
-            if (gameResult === GameResult.OWNER) return game.owner;
-
-            return game.opponent;
-        };
-
-        const accessToken = req.header("Access-Token");
-        if (!accessToken) return res.json(getError("Access-Token header wasn't provided", 403));
+    private async getGameStatus(req: express.Request, res: express.Response) {
+        this.getAccessToken(req);
+        if (!this.accessToken) return res.json(getError("Access-Token header wasn't provided", 403));
 
         const repository: Repository<Game> = getRepository(Game);
-        const nowTimestamp = new Date().getTime();
+
+        let game: Game;
+        try {
+            game = await repository.findOne(this.getAccessTokenCriteria());
+        } catch (error) {
+            res.json(getError(error, 404));
+        }
+
+        const gameDuration: number = subtractDates(new Date(), game.timeOfStart);
+        if (gameDuration > this.MAX_INACTIVITY_TIME) {
+            await repository.remove(game);
+
+            return res.json(getError('Game has been removed due to inactivity', 404));
+        }
 
         try {
-            const game = await repository.findOne({
-                where: [
-                    {ownerAccessToken: accessToken},
-                    {opponentAccessToken: accessToken},
-                ],
-            });
-
-            const who: string = game.ownerAccessToken === accessToken ? 'owner' : 'opponent';
-            const youTurn: boolean = game.whomTurn === who;
-            const gameDuration: number = nowTimestamp - game.timeOfStart.getTime();
-            const field: string[] = game.field;
-            const winner: string = getWinnerName(game);
-
-            if (gameDuration > this.MAX_INACTIVITY_TIME) {
-                await repository.remove(game);
-
-                return res.json(getError('Game has been removed due to inactivity', 404));
-            }
-
             await repository.update({gameToken: game.gameToken}, {gameDuration});
-
-            res.json({
-                status: 'ok',
-                code: 0,
-                youTurn,
-                gameDuration,
-                field,
-                winner,
-            });
         } catch (error) {
-            res.json(getError("Game not found", 404));
+            res.json(getError(error, 500));
         }
+
+        const youTurn: boolean = game.whomTurn === this.getRequesterType(game);
+        const winner: string = GamesController.getWinnerName(game);
+
+        res.json({
+            status: 'ok',
+            code: 0,
+            youTurn,
+            gameDuration,
+            field: game.field,
+            winner,
+        });
     }
 
-    private async getGameData(req: any, res: any) {
-        const {gameToken} = req.query;
+    private async getGameData(req: express.Request, res: express.Response) {
+        const {gameToken}: { gameToken: string } = req.query;
         if (!gameToken) return res.json(getError("gameToken parameter wasn't provided"));
 
         const repository: Repository<Game> = getRepository(Game);
 
+        let game: Game;
         try {
-            const game = await repository.findOne({gameToken});
-
-            if (game.gameDuration > this.MAX_INACTIVITY_TIME) {
-                await repository.remove(game);
-
-                return res.json(getError('Game has been removed due to inactivity', 404));
-            }
-
-            res.json({
-                status: 'ok',
-                code: 0,
-                state: game.state,
-                gameResult: game.gameResult,
-                gameDuration: game.gameDuration,
-                field: game.field,
-                owner: game.owner,
-                opponent: game.opponent,
-            });
+            game = await repository.findOne({gameToken});
         } catch (error) {
-            res.json(getError("Game not found", 404));
+            res.json(getError(error, 404));
         }
+
+        const {state, gameResult, gameDuration, field, owner, opponent} = game;
+        if (gameDuration > this.MAX_INACTIVITY_TIME && state !== GameState.DONE) {
+            await repository.remove(game);
+
+            return res.json(getError('Game has been removed due to inactivity', 404));
+        }
+
+        res.json({
+            status: 'ok',
+            code: 0,
+            state,
+            gameResult,
+            gameDuration,
+            field,
+            owner,
+            opponent,
+        });
     }
 
-    private async createGame(req: any, res: any) {
-        const {userName, size} = req.body;
-        if (!userName) return res.json(getError("userName parameter wasn't provided"));
-        if (!size) return res.json(getError("size parameter wasn't provided"));
+    private async createGame(req: express.Request, res: express.Response) {
+        this.getParams(req, 'userName', 'size');
+
+        const {userName, size, error, message}: IRequestParams = this.currParams;
+        if (error) return res.json(getError(message));
 
         const repository: Repository<Game> = getRepository(Game);
-        const newGame = new Game();
+        const newGame: Game = new Game();
         GamesController.setNewGameParams(newGame, {userName, size});
 
         try {
@@ -328,75 +334,69 @@ class GamesController {
                 gameToken: newGame.gameToken,
             });
         } catch (error) {
-            console.log(error);
+            res.json(getError(error, 500));
         }
     }
 
-    private async joinGame(req: any, res: any) {
-        const {userName, gameToken} = req.body;
-        if (!userName) return req.json(getError("userName parameter wasn't provided"));
-        if (!gameToken) return req.json(getError("gameToken parameter wasn't provided"));
+    private async joinGame(req: express.Request, res: express.Response) {
+        this.getParams(req, 'userName', 'gameToken');
+
+        const {userName, gameToken, error, message}: IRequestParams = this.currParams;
+        if (error) return res.json(getError(message));
 
         const repository: Repository<Game> = getRepository(Game);
 
+        let game: Game;
         try {
-            const game: Game = await repository.findOne({gameToken});
-
-            if (game.state === GameState.PLAYING) return req.json(getError("Game is already started"), 403);
-            if (game.opponent !== '') return req.json(getError("Game is already have a opponent"), 403);
-
-            const currTime: Date = new Date();
-            const accessToken: string = randomAlphanumericString(12);
-            const updatedData = {
-                opponent: userName,
-                opponentAccessToken: accessToken,
-                state: GameState.PLAYING,
-                lastActivityTime: currTime,
-                timeOfStart: currTime,
-                whomTurn: 'owner',
-            };
-
-            await repository.update({gameToken}, updatedData);
-
-            res.json({
-                status: 'ok',
-                code: 0,
-                accessToken,
-            });
+            game = await repository.findOne({gameToken});
         } catch (error) {
-            console.log(error);
+            return res.json(getError(error, 500));
         }
+
+        if (game.state === GameState.PLAYING) return res.json(getError("Game is already started", 403));
+        if (game.opponent !== '') return res.json(getError("Game is already have a opponent", 403));
+
+        const currTime: Date = new Date();
+        const accessToken: string = randomAlphanumericString(12);
+
+        try {
+            await repository.update(
+                {gameToken},
+                GamesController.getSetStartData(userName, accessToken, currTime),
+            );
+        } catch (error) {
+            return res.json(getError(error, 500));
+        }
+
+        res.json({
+            status: 'ok',
+            code: 0,
+            accessToken,
+        });
     }
 
-    private async getListOfGames(req: any, res: any) {
+    private async getListOfGames(req: express.Request, res: express.Response) {
         const repository: Repository<Game> = getRepository(Game);
 
-        const games: IGameParams[] = [];
-        const toRemoveArr: Game[] = [];
-        const currTimestamp = new Date().getTime();
+        let gameObjects: Game[] = [];
+        const currTimestamp: Date = new Date();
 
         try {
-            const gameObjects: Game[] = await repository.find();
-
-            gameObjects.forEach((currGame: Game): void => {
-                const deltaTime: number = currTimestamp - currGame.lastActivityTime.getTime();
-
-                if (deltaTime <= this.MAX_INACTIVITY_TIME)
-                    games.push({...currGame});
-                else
-                    toRemoveArr.push(currGame);
-            });
-
-            if (toRemoveArr.length !== 0) await repository.remove(toRemoveArr);
-
-            res.json({
-                status: 'ok',
-                code: 0,
-                games,
-            });
+            gameObjects = await repository.find();
         } catch (error) {
-            console.log(error);
+            return res.json(getError(error, 500));
         }
+
+        const initialSortedGamesObj: ISortedGames = {correctGames: [], gamesToRemove: [], currTimestamp};
+        const {correctGames, gamesToRemove} = gameObjects.reduce(this.sortGames, initialSortedGamesObj);
+
+        if (gamesToRemove.length !== 0) await repository.remove(gamesToRemove);
+
+        res.json({
+            status: 'ok',
+            code: 0,
+            games: correctGames,
+        });
     }
 }
 

@@ -29,6 +29,7 @@ export default class GameField extends React.Component<IGameField, {}> {
         super(props);
 
         this.getCells = this.getCells.bind(this);
+        this.handleButtonClick = this.handleButtonClick.bind(this);
     }
 
     public render(): JSX.Element {
@@ -65,7 +66,15 @@ export default class GameField extends React.Component<IGameField, {}> {
         if (gameState === GameState.DRAW || gameState === GameState.WON || userType === UserType.VIEWER)
             return <LinkButton href='/'>Вернуться</LinkButton>;
 
-        return <LinkButton onClick={this.props.surrenderHandler} href='/'>Сдаться</LinkButton>;
+        return <LinkButton onClick={this.handleButtonClick} href='/'>Сдаться</LinkButton>;
+    }
+
+    private handleButtonClick(event: MouseEvent): void {
+        console.log(1);
+
+        event.preventDefault();
+
+        this.props.surrenderHandler();
     }
 
     private getCells(acc: JSX.Element[], currRow: string, row: number): JSX.Element[] {
