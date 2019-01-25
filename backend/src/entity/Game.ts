@@ -37,6 +37,13 @@ export class Game {
     })
     opponentAccessToken: string;
 
+    @Column({
+        type: "varchar",
+        length: 8,
+        default: '',
+    })
+    whomTurn: string;
+
     @Column("varchar", {array: true})
     field: string[];
 
@@ -57,6 +64,9 @@ export class Game {
 
     @Column("timestamp")
     lastActivityTime: Date;
+
+    @Column("timestamp", {nullable: true})
+    timeOfStart: Date;
 
     @Column({
         type: "enum",

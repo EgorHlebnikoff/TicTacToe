@@ -80,9 +80,12 @@ export default class ControlCenter extends React.Component<IControlCenterProps, 
     }
 
     private setGameReady(gameToken: string): void {
+        const annotation: string = `Игра готова! Передайте ваш gameToken ${gameToken} `
+            + `другим игрокам, чтобы они могли присоедениться!`;
+
         this.setState({
             isGameReady: true,
-            annotationToGameCreation: 'Игра готова! Можно приступать!',
+            annotationToGameCreation: annotation,
             currentGameToken: gameToken,
         });
     }

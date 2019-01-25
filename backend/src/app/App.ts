@@ -22,6 +22,10 @@ class App {
         GamesController.createGameRoute,
         GamesController.gamesListRoute,
         GamesController.joinGameRoute,
+        GamesController.getGameDataRoute,
+        GamesController.getGameStatusRoute,
+        GamesController.doStepRoute,
+        GamesController.handlerSurrenderRoute,
     ];
 
     constructor() {

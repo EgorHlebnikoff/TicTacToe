@@ -7,8 +7,7 @@ import GameField from "./gameField/GameField";
 import Header from './header/Header';
 import PlayerBar from './playerBar/PlayerBar';
 
-export enum GameState {WAITING, PLAYER_TURN, OPPONENT_TURN, WON, DRAW}
-
+export enum GameState {WAITING, PLAYING, WON, DRAW}
 export enum UserType {OWNER, OPPONENT, VIEWER}
 
 interface IMatchParams {
@@ -24,6 +23,7 @@ interface IGameScreenState {
         owner: string;
         opponent: string;
     };
+    youTurn: boolean;
     winner?: string;
     gameState: GameState;
 }
@@ -31,7 +31,9 @@ interface IGameScreenState {
 export default class GameScreen extends React.Component<IGameScreenProps, IGameScreenState> {
     private readonly gameToken: string = this.props.match.params.gameToken;
 
-    private timeIncreaseInterval: WindowTimers | null = null;
+    private timeIncreaseInterval: any = null;
+    private fetchGameDataTimeout: any = null;
+    private fetchGameStatusTimeout: any = null;
     private currPlayerStatus: UserType;
     private currPlayerAccessToken: string | null = null;
 
@@ -39,23 +41,25 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
         super(props);
 
         this.setPlayerInfo();
+
+        this.state = {
+            field: ['???', '???', '???'],
+            time: 0,
+            gameState: GameState.WAITING,
+            players: {
+                owner: 'LOADING',
+                opponent: 'LOADING',
+            },
+            youTurn: false,
+        };
+
         this.fetchGameData();
 
-        // this.state = {
-        //     time: 0,
-        //     field: [['?', '?', '?'], ['?', '?', '?'], ['?', '?', '?']],
-        //     players: {
-        //         owner: 'Андрей Хайнекен',
-        //         opponent: "Борис Гиннес",
-        //     },
-        // };
-
         this.handleTurn = this.handleTurn.bind(this);
+        this.handleSurrender = this.handleSurrender.bind(this);
         this.increaseTime = this.increaseTime.bind(this);
-    }
-
-    public componentWillMount(): void {
-        this.timeIncreaseInterval = setInterval(this.increaseTime, 1000);
+        this.fetchGameData = this.fetchGameData.bind(this);
+        this.fetchGameStatus = this.fetchGameStatus.bind(this);
     }
 
     public render(): JSX.Element[] {
@@ -63,6 +67,12 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
             field: this.state.field,
             time: this.state.time,
             turnHandler: this.handleTurn,
+            surrenderHandler: this.handleSurrender,
+            gameState: this.state.gameState,
+            winner: this.state.winner,
+            youTurn: this.state.youTurn,
+            userType: this.currPlayerStatus,
+            players: this.state.players,
         };
 
         return ([
@@ -70,7 +80,7 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
             <Header key='header'/>,
             (
                 <Container key={'container'}>
-                    <PlayerBar players={this.state.players}/>
+                    <PlayerBar playerType={this.currPlayerStatus} players={this.state.players}/>
                     <GameField {...gameFieldProps}/>
                 </Container>
             ),
@@ -100,55 +110,157 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
     }
 
     private handleTurn([row, column]: number[]) {
-        const newField = this.state.field;
-        newField[row].split('')[column] = 'X';
+        fetch('/games/do_step', {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json",
+                "Access-Token": this.currPlayerAccessToken,
+            },
+            body: JSON.stringify({row, column}),
+        })
+            .then((response) => response.json())
+            .then((response) => {
+                const {status, code} = response;
+                if (status !== 'ok' || code !== 0) return;
 
-        this.setState({field: newField});
+                const newField = this.state.field;
+                newField[row].split('')[column] = this.currPlayerStatus === UserType.OWNER ? 'X' : 'O';
+
+                this.setState({
+                    field: newField,
+                    youTurn: false,
+                });
+            })
+            .catch((error) => console.error('Error: ', error));
+    }
+
+    private handleSurrender(): void {
+        fetch('/games/surrender', {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json",
+                "Access-Token": this.currPlayerAccessToken,
+            },
+        })
+            .then((response) => response.json())
+            .then((response) => {
+                const {status, code} = response;
+                if (status !== 'ok' || code !== 0) return;
+            })
+            .catch((error) => console.error('Error: ', error));
     }
 
     private fetchGameData() {
-        fetch('/games/get', {
+        fetch(`/games/get?gameToken=${this.gameToken}`, {
             headers: {"Content-Type": "application/json"},
         })
             .then((response) => response.json())
             .then((response) => {
-                const {status, code, owner, opponent, gameResult, state, gameDuration, field} = response;
+                const {status, code, state} = response;
                 if (status !== 'ok' && code !== 0) return;
 
-                let gameState: GameState;
-                let winner: string;
-
-                if (gameResult !== '') {
-                    if (gameResult === 'draw') {
-                        gameState = GameState.DRAW;
-                    } else {
-                        gameState = GameState.WON;
-                        winner = gameResult === 'owner' ? owner : opponent;
-                    }
-                }
-
-                if (state === 'ready') {
-                    gameState = GameState.WAITING;
-
-                    setTimeout(this.fetchGameData, 2000);
-                }
-                // if (state === 'playing') this.fetchGameStatus(); - получить параметры игры, прямо сейчас.
-
-                const stateObject = {
-                    time: gameDuration,
-                    players: {
-                        owner,
-                        opponent,
-                    },
-                    field,
-                    gameState,
-                    winner,
-                };
-
-                this.setState({...stateObject});
-
-                return;
+                if (state === 'done') return this.gameDoneStateHandler({...response});
+                if (state === 'ready') return this.gameReadyStateHandler({...response});
+                if (state === 'playing') return this.gamePlayingStateHandler({...response});
             })
             .catch((error) => console.error('Error: ', error));
+    }
+
+    private gameDoneStateHandler({owner, opponent, gameResult, gameDuration, field}: {
+        owner: string,
+        opponent: string,
+        gameResult: string,
+        gameDuration: number,
+        field: string[],
+    }) {
+        let gameState: GameState;
+        let winner: string;
+
+        if (gameResult === 'draw') {
+            gameState = GameState.DRAW;
+        } else {
+            gameState = GameState.WON;
+            winner = gameResult === 'owner' ? owner : opponent;
+        }
+
+        this.setState({
+            time: gameDuration,
+            players: {
+                owner,
+                opponent,
+            },
+            field,
+            gameState,
+            winner,
+        });
+    }
+
+    private gameReadyStateHandler({owner, opponent, gameDuration, field}: {
+        owner: string,
+        opponent: string,
+        gameDuration: number,
+        field: string[],
+    }) {
+        this.setState({
+            time: gameDuration,
+            players: {
+                owner,
+                opponent,
+            },
+            field,
+            gameState: GameState.WAITING,
+        });
+
+        this.fetchGameDataTimeout = setTimeout(this.fetchGameData, 2000);
+    }
+
+    private gamePlayingStateHandler({owner, opponent, gameDuration, field}: {
+        owner: string,
+        opponent: string,
+        gameDuration: number,
+        field: string[],
+    }) {
+        this.setState({
+            time: gameDuration,
+            players: {
+                owner,
+                opponent,
+            },
+            field,
+            gameState: GameState.PLAYING,
+        });
+
+        this.currPlayerStatus !== UserType.VIEWER
+            ? this.fetchGameStatus()
+            : setTimeout(this.fetchGameData, 2000);
+    }
+
+    private fetchGameStatus() {
+        this.timeIncreaseInterval = setInterval(this.increaseTime, 1000);
+
+        fetch('/games/state', {
+            headers: {
+                "Content-Type": "application/json",
+                "Access-Token": this.currPlayerAccessToken,
+            },
+        })
+            .then((response) => response.json())
+            .then((response) => {
+                const {status, code, youTurn, gameDuration, field, winner} = response;
+                if (status !== 'ok' || code !== 0) return;
+
+                const gameState = winner && winner !== '' ? GameState.WON : this.state.gameState;
+                this.setState({
+                    youTurn,
+                    time: gameDuration,
+                    field,
+                    winner,
+                    gameState,
+                });
+
+                if (gameState === GameState.PLAYING)
+                    this.fetchGameStatusTimeout = setTimeout(this.fetchGameStatus, 2000);
+            })
+            .catch((error) => console.error("Error: ", error));
     }
 }

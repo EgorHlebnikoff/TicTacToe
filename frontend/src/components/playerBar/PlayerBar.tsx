@@ -1,42 +1,47 @@
 import * as React from 'react';
+import {UserType} from '../GameScreen';
 import Section from '../section/Section';
 import Svg from "../svg/Svg";
 import * as styled from './styles';
 
-enum PlayerType {OWNER = "OWNER", OPPONENT = "OPPONENT", NONE = "NONE"}
-
 interface IPlayerBar {
-    players?: {
+    playerType: UserType;
+    players: {
         owner: string;
-        opponent: string;
+        opponent?: string;
     };
 }
 
 export default class PlayerBar extends React.Component<IPlayerBar, {}> {
-    private static renderPlayer(name: string, type: PlayerType): JSX.Element {
-        return (
-            <styled.PlayerContainer>
-                {type === PlayerType.OPPONENT && PlayerBar.getSVG(type)}
-                <styled.Player>{type !== PlayerType.NONE ? name : 'Ожидается...'}</styled.Player>
-                {type === PlayerType.OWNER && PlayerBar.getSVG(type)}
-            </styled.PlayerContainer>
-        );
-    }
-
-    private static getSVG(type: PlayerType): JSX.Element {
-        const svg = type === PlayerType.OWNER
-            ? <Svg isActive={false} name="cross"/>
-            : <Svg isActive={false} name="circle"/>;
+    private static getSVG(type: UserType, currPlayerType: UserType): JSX.Element {
+        const svg = type === UserType.OWNER
+            ? <Svg isActive={currPlayerType === type} name="cross"/>
+            : <Svg isActive={currPlayerType === type} name="circle"/>;
 
         return <styled.SVGContainer>{svg}</styled.SVGContainer>;
     }
 
     public render(): JSX.Element {
+        const {owner, opponent}: { owner: string, opponent?: string } = this.props.players;
+        
         return (
             <Section backgroundColor='#fafafa'>
-                {PlayerBar.renderPlayer('Andry', PlayerType.OWNER)}
-                {PlayerBar.renderPlayer('Boris', PlayerType.OPPONENT)}
+                {this.renderPlayer(owner, UserType.OWNER)}
+                {this.renderPlayer(opponent, UserType.OPPONENT)}
             </Section>
+        );
+    }
+
+    private renderPlayer(name: string, type: UserType): JSX.Element {
+        const getName: () => string = (): string => name && name !== '' ? name : 'Ожидается...';
+        const {playerType}: { playerType: UserType } = this.props;
+
+        return (
+            <styled.PlayerContainer>
+                {type === UserType.OPPONENT && PlayerBar.getSVG(type, playerType)}
+                <styled.Player>{getName()}</styled.Player>
+                {type === UserType.OWNER && PlayerBar.getSVG(type, playerType)}
+            </styled.PlayerContainer>
         );
     }
 }
