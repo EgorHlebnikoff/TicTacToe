@@ -1,16 +1,8 @@
 import * as React from 'react';
-import {UserType} from '../GameScreen';
 import Section from '../section/Section';
 import Svg from "../svg/Svg";
+import {IPlayerBar, IPlayers, UserType} from "./PlayerBarTypes";
 import * as styled from './styles';
-
-interface IPlayerBar {
-    playerType: UserType;
-    players: {
-        owner: string;
-        opponent?: string;
-    };
-}
 
 export default class PlayerBar extends React.Component<IPlayerBar, {}> {
     private static getSVG(type: UserType, currPlayerType: UserType): JSX.Element {
@@ -22,7 +14,7 @@ export default class PlayerBar extends React.Component<IPlayerBar, {}> {
     }
 
     public render(): JSX.Element {
-        const {owner, opponent}: { owner: string, opponent?: string } = this.props.players;
+        const {owner, opponent}: IPlayers = this.props.players;
         
         return (
             <Section backgroundColor='#fafafa'>

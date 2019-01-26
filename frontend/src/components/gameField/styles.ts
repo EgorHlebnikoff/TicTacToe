@@ -4,9 +4,6 @@ import {StyledElement} from "../../globalStyles";
 export const Annotation: StyledElement = styled('h2')`
   --font-size: 46px;
   --font-weight: 700;
-  --lines-indent: -120px;
-  --lines-width: 100px;
-  --lines-content: '';
 
   position: relative;
 
@@ -16,25 +13,7 @@ export const Annotation: StyledElement = styled('h2')`
   line-height: 1;
   color: #7966fd;
   text-shadow: -1px -1px 1px rgba(255,255,255,.1), 1px 1px 1px rgba(0,0,0,.5), 3px 6px 10px rgba(238,238,238,0);
-  
-  &::after, &::before {
-    content: var(--lines-content);
-    display: block;
-    position: absolute;
-    height: 2px;
-    width: var(--lines-width);
-    background-color: #7966fd;
-    
-    top: calc(50% - 1px);
-  }
-  
-  &::after {
-    left: var(--lines-indent);
-  }
-  
-  &::before {
-    right: var(--lines-indent);
-  }
+  text-align: center;
   
   @media (max-width: 840px) {
     --font-size: 36px;

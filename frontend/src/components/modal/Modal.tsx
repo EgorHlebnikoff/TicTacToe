@@ -18,14 +18,11 @@ class Modal extends React.Component<IModal, {}> {
     constructor(props: IModal) {
         super(props);
 
+        if (this.props.beforeOpen)
+            this.props.beforeOpen();
+
         this.handleKeyUp = this.handleKeyUp.bind(this);
         this.handleOutsideClick = this.handleOutsideClick.bind(this);
-    }
-
-    public componentWillMount(): void {
-        if (!this.props.beforeOpen) return;
-
-        this.props.beforeOpen();
     }
 
     public componentDidMount(): void {
@@ -62,7 +59,7 @@ class Modal extends React.Component<IModal, {}> {
     }
 
     private handleKeyUp(e: KeyboardEvent): void {
-        const {onClose} = this.props;
+        const {onClose}: IModal = this.props;
         const ESCKeyCode: string = '27';
 
         if (e.key !== ESCKeyCode) return;
@@ -73,7 +70,7 @@ class Modal extends React.Component<IModal, {}> {
     }
 
     private handleOutsideClick(e: MouseEvent): void {
-        const {onClose} = this.props;
+        const {onClose}: IModal = this.props;
 
         if (!this.modal || this.modal.contains(e.target as HTMLElement)) return;
 

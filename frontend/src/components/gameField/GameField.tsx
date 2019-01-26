@@ -2,25 +2,10 @@ import * as React from 'react';
 import getTime from '../../modules/date/DateModule';
 import {LinkButton} from "../button/Button";
 import FieldCell from "../fieldCell/FieldCell";
-import {GameState, UserType} from '../GameScreen';
 import Span from "../span/Span";
 import Svg from "../svg/Svg";
+import {GameState, IGameField, IPlayers, UserType} from "./GameFieldTypes";
 import * as styled from "./styles";
-
-interface IGameField {
-    gameState: GameState;
-    players: {
-        owner: string;
-        opponent: string;
-    };
-    field: string[];
-    winner?: string;
-    time: number;
-    youTurn: boolean;
-    userType: UserType;
-    surrenderHandler?: () => void;
-    turnHandler: ([row, column]: number[]) => void;
-}
 
 export default class GameField extends React.Component<IGameField, {}> {
     private cellsTypes: string[] = ['x', 'o', 'о', 'х'];
@@ -43,15 +28,29 @@ export default class GameField extends React.Component<IGameField, {}> {
         );
     }
 
+    private doesCurrUserWin(): boolean {
+        const {userType, winner}: IGameField = this.props;
+        const {owner, opponent}: IPlayers = this.props.players;
+
+        return (userType === UserType.OWNER && winner === owner)
+            || (userType === UserType.OPPONENT && winner === opponent);
+    }
+
+    private provideClickHandler(): boolean {
+        return this.props.youTurn && this.props.gameState === GameState.PLAYING;
+    }
+
+    private isNonEmptyCell(cellType: string): boolean {
+        return this.cellsTypes.some((item: string) => item === cellType);
+    }
+
     private getAnnotation(): string {
-        const {youTurn, gameState, userType, winner} = this.props;
-        const {owner, opponent} = this.props.players;
+        const {youTurn, gameState, winner}: IGameField = this.props;
 
         if (gameState === GameState.WAITING) return 'Ожидается оппонент';
         if (gameState === GameState.DRAW) return 'Игра завершилась ничьей';
         if (gameState === GameState.WON) {
-            if ((userType === UserType.OWNER && winner === owner)
-                || (userType === UserType.OPPONENT && winner === opponent)) return "Игра завершилсь вашей победой";
+            if (this.doesCurrUserWin()) return "Игра завершилсь вашей победой";
 
             return `Игра завершилась победой ${winner}`;
         }
@@ -62,46 +61,46 @@ export default class GameField extends React.Component<IGameField, {}> {
     }
 
     private renderButton(): JSX.Element {
-        const {userType, gameState} = this.props;
-        if (gameState === GameState.DRAW || gameState === GameState.WON || userType === UserType.VIEWER)
-            return <LinkButton href='/'>Вернуться</LinkButton>;
+        const {userType, gameState}: IGameField = this.props;
 
-        return <LinkButton onClick={this.handleButtonClick} href='/'>Сдаться</LinkButton>;
+        if (gameState === GameState.PLAYING && userType !== UserType.VIEWER)
+            return <LinkButton onClick={this.handleButtonClick} href='/'>Сдаться</LinkButton>;
+
+        return <LinkButton href='/'>Вернуться</LinkButton>;
+    }
+
+    private getSVG(svgType: string): JSX.Element {
+        if (svgType === 'x' || svgType === 'х')
+            return <Svg isActive={this.props.userType === UserType.OWNER} name='cross'/>;
+
+        return <Svg isActive={this.props.userType === UserType.OPPONENT} name='circle'/>;
     }
 
     private handleButtonClick(event: MouseEvent): void {
-        console.log(1);
-
         event.preventDefault();
 
         this.props.surrenderHandler();
     }
 
     private getCells(acc: JSX.Element[], currRow: string, row: number): JSX.Element[] {
-        currRow.split('').forEach((currCell: string, column: number) => {
+        const rowArray: string[] = currRow.split('');
+
+        rowArray.forEach((currCell: string, column: number) => {
             currCell = currCell.toLowerCase();
             const key: number = (row * currRow.length) + column;
+            const index: string = `${row}_${column}`;
 
-            const provideClickHandler: () => boolean = (): boolean => this.props.youTurn
-                && this.props.gameState === GameState.PLAYING;
-
-            if (this.cellsTypes.every((item: string) => item !== currCell)) {
-                acc.push(
-                    <FieldCell
-                        key={key}
-                        index={`${row}_${column}`}
-                        clickHandler={provideClickHandler() ? this.props.turnHandler : null}
-                    />,
-                );
+            if (this.isNonEmptyCell(currCell)) {
+                acc.push(<FieldCell key={key} index={index} svg={this.getSVG(currCell)}/>);
 
                 return;
             }
 
-            const svg = currCell === 'x' || currCell === 'x'
-                ? <Svg isActive={this.props.userType === UserType.OWNER} name='cross'/>
-                : <Svg isActive={this.props.userType === UserType.OPPONENT} name='circle'/>;
+            const clickHandler: ([row, column]: number[]) => void | null = this.provideClickHandler()
+                ? this.props.turnHandler
+                : null;
 
-            acc.push(<FieldCell key={key} index={`${row}_${column}`} svg={svg}/>);
+            acc.push(<FieldCell key={key} index={index} clickHandler={clickHandler}/>);
         });
 
         return acc;

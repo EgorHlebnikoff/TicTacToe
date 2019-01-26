@@ -1,43 +1,18 @@
 import * as React from "react";
-import Cookies from "universal-cookie";
+import Cookies from "../../modules/cookie/Cookie";
+import {fetchGamesList, fetchJoinGameAction} from "../../modules/fetch/FetchModule";
+import {IGetGamesListResponse, IJoinGameResponse} from "../../modules/fetch/FetchModuleTypes";
 import {ButtonContainer, TransparentButton, TransparentLinkButton} from "../button/Button";
 import GameCard, {GameState, IPlayer, PlayerState} from '../gameCard/GameCard';
 import Input from "../input/Input";
 import Modal from "../modal/Modal";
 import Preloader from "../preloader/Preloader";
 import Span from "../span/Span";
+import {ConnectionStatus, IGameList, IGameListState, IGameParams, IPlayersParams} from "./GamesListTypes";
 import StyledGameList, {PreloaderContainer} from './styles';
 
-enum ConnectionStatus {INITIAL = "INITIAL", ERROR = "ERROR", WRONG_TOKEN = "WRONG_TOKEN"}
-
-interface IGameParams {
-    gameToken: string;
-    owner: string;
-    opponent: string;
-    size: number;
-    gameDuration: number;
-    gameResult: string;
-    state: string;
-}
-
-interface IGameListState {
-    games: JSX.Element[];
-    isModalOpen: boolean;
-    currentGameToken: string;
-    currentGameState: string;
-    connectionToGameStatus: ConnectionStatus;
-    isConnected: boolean;
-    isAllowedToContinue: boolean;
-    isCanToTryToConnect: boolean;
-}
-
-interface IGameList {
-    userNameInputRef: React.RefObject<HTMLInputElement>;
-    className?: string;
-}
-
 class GameList extends React.Component<IGameList, IGameListState> {
-    private static getGamePlayers(playersParams: { owner: string; opponent: string; gameResult: string; }): IPlayer[] {
+    private static getGamePlayers(playersParams: IPlayersParams): IPlayer[] {
         const players: IPlayer[] = [];
 
         const firstPlayer: IPlayer = {
@@ -83,6 +58,8 @@ class GameList extends React.Component<IGameList, IGameListState> {
             isCanToTryToConnect: false,
         };
 
+        this.fetchGames();
+
         this.getGame = this.getGame.bind(this);
         this.fetchGames = this.fetchGames.bind(this);
         this.closeModal = this.closeModal.bind(this);
@@ -92,14 +69,12 @@ class GameList extends React.Component<IGameList, IGameListState> {
         this.setFocusToModalInput = this.setFocusToModalInput.bind(this);
     }
 
-    public componentWillMount(): void {
-        this.fetchGames();
-    }
-
     public render(): JSX.Element {
+        const emptyListSpan: JSX.Element = <Span classList='center white'>Список игр пуст</Span>;
+
         return (
             <section key="gamesList" className={this.props.className}>
-                {this.state.games.length === 0 ? <Span>Список игр пуст</Span> : this.state.games}
+                {this.state.games.length === 0 ? emptyListSpan : this.state.games}
                 {this.state.isModalOpen && this.renderModal()}
             </section>
         );
@@ -125,7 +100,7 @@ class GameList extends React.Component<IGameList, IGameListState> {
                 className='verifyRedirectionModal'
             >
                 {!isAllowedToContinue && this.renderPreloader()}
-                <Span>{this.getSpanContent()}</Span>
+                <Span classList='center'>{this.getSpanContent()}</Span>
                 {!isAllowedToContinue && this.getModalInput()}
                 <ButtonContainer>
                     <TransparentButton onClick={this.closeModal}>Нет</TransparentButton>
@@ -171,12 +146,10 @@ class GameList extends React.Component<IGameList, IGameListState> {
         if (this.state.isModalOpen) return;
 
         const isAlreadyInGame: () => boolean = (): boolean => {
-            const cookies = new Cookies();
-            const gameCookies = cookies.get('games');
-            if (!gameCookies) return false;
+            if (!Cookies.doesExist('games')) return false;
+            const currGameCookies = Cookies.get('games')[gameToken];
 
-            const currGameCookies = gameCookies[gameToken];
-            return currGameCookies && (currGameCookies.type === 'owner' || gameCookies.type === 'opponent');
+            return currGameCookies && (currGameCookies.type === 'owner' || currGameCookies.type === 'opponent');
         };
 
         const isAllowedToContinue = isAlreadyInGame() || state !== 'WAITING';
@@ -222,54 +195,63 @@ class GameList extends React.Component<IGameList, IGameListState> {
         this.setState({isCanToTryToConnect: !isEmptyValue});
     }
 
-    private redirectToGameHandler(e: MouseEvent): void {
-        const eventTarget: HTMLLinkElement = e.target as HTMLLinkElement;
+    private async redirectToGameHandler(event: MouseEvent): Promise<void> {
+        const eventTarget: HTMLLinkElement = event.target as HTMLLinkElement;
         if (!eventTarget.classList.contains('joinGame')) return;
 
-        e.preventDefault();
+        event.preventDefault();
 
-        const userName: string | false = this.getUserName();
-        if (!userName) return;
+        const {userName, gameToken, error} = this.getJoinGameParams();
+        if (error) return;
 
-        const gameToken: string | false = this.getUserProvidedGameToken();
-        if (!gameToken) return;
+        if (!this.openPreloader()) return;
 
-        if (!this.preloaderContainerRef) return;
+        try {
+            const {
+                status,
+                code,
+                message,
+                accessToken,
+            }: IJoinGameResponse = await fetchJoinGameAction(userName, gameToken);
+            if (status === 'error') return this.handleRequestError(code, message);
+
+            this.handleJoinGameResponse(userName, gameToken, accessToken);
+        } catch (error) {
+            console.error('Error:', error);
+
+            this.handleRequestError(500);
+        }
+    }
+
+    private handleJoinGameResponse(userName: string, gameToken: string, accessToken: string) {
+        this.setState({isConnected: true});
+
+        Cookies.setGameCookies(gameToken, accessToken);
+        Cookies.setNameCookies(userName);
+
+        setTimeout(() => window.location.href = `/game/${gameToken}`, 1000);
+    }
+
+    private openPreloader(): boolean {
+        if (!this.preloaderContainerRef) return false;
+
         const preloaderContainer: HTMLDivElement = this.preloaderContainerRef.current;
         preloaderContainer.classList.add('opened');
 
-        fetch('/games/join', {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({userName, gameToken}),
-        })
-            .then((response) => response.json())
-            .then((response) => {
-                const {status, code, accessToken} = response;
-                if (status === 'ok' && code === 0) {
-                    this.setState({isConnected: true});
-
-                    const cookies = new Cookies();
-                    let gameCookies = cookies.get('games');
-                    if (!gameCookies) gameCookies = {};
-
-                    gameCookies[gameToken] = {
-                        accessToken,
-                        type: 'opponent',
-                    };
-                    cookies.set('games', gameCookies, {path: '/'});
-
-                    setTimeout(() => window.location.href = `/game/${gameToken}`, 1000);
-                }
-            })
-            .catch((error: Error) => console.error('Error:', error));
+        return true;
     }
 
-    private getUserName(): string | false {
-        const userNameInput: HTMLInputElement = this.props.userNameInputRef.current;
-        if (!userNameInput) return false;
-        if (userNameInput.value !== '') return userNameInput.value;
+    private getJoinGameParams(): { userName: string; gameToken: string; error: boolean } {
+        const userName: string | false = this.getUserName();
+        if (!userName) return {userName: '', gameToken: '', error: true};
 
+        const gameToken: string | false = this.getUserProvidedGameToken();
+        if (!gameToken) return {userName: '', gameToken: '', error: true};
+
+        return {userName, gameToken, error: false};
+    }
+
+    private triggerUserNameInputError(userNameInput: HTMLInputElement): false {
         this.closeModal();
 
         userNameInput.classList.add('error');
@@ -278,12 +260,16 @@ class GameList extends React.Component<IGameList, IGameListState> {
         return false;
     }
 
-    private getUserProvidedGameToken(): string | false {
-        if (!this.modalInputRef.current === null) return false;
+    private getUserName(): string | false {
+        const userNameInput: HTMLInputElement = this.props.userNameInputRef.current;
+        if (!userNameInput) return false;
 
-        const gameTokenInput: HTMLInputElement = this.modalInputRef.current;
-        if (gameTokenInput.value === this.state.currentGameToken) return gameTokenInput.value;
+        if (userNameInput.value === '') this.triggerUserNameInputError(userNameInput);
 
+        return userNameInput.value;
+    }
+
+    private triggerGameTokenInputError(gameTokenInput: HTMLInputElement): false {
         gameTokenInput.value = '';
         gameTokenInput.classList.add('error');
         gameTokenInput.focus();
@@ -295,30 +281,50 @@ class GameList extends React.Component<IGameList, IGameListState> {
         return false;
     }
 
-    private getGame(currArray: JSX.Element[], currGame: IGameParams): JSX.Element[] {
-        const id = currGame.gameToken;
-        const time = currGame.gameDuration;
-        const players: IPlayer[] = GameList.getGamePlayers(currGame);
-        const state = GameList.getGameState(currGame);
+    private getUserProvidedGameToken(): string | false {
+        if (!this.modalInputRef.current === null) return false;
 
-        currArray.push((
-            <GameCard key={id} token={id} players={players} time={time} state={state} clickFunc={this.openModal}/>
-        ));
+        const gameTokenInput: HTMLInputElement = this.modalInputRef.current;
+        if (gameTokenInput.value !== this.state.currentGameToken)
+            return this.triggerGameTokenInputError(gameTokenInput);
+
+        return gameTokenInput.value;
+    }
+
+    private getGame(currArray: JSX.Element[], currGame: IGameParams): JSX.Element[] {
+        const id: string = currGame.gameToken;
+        const time: number = currGame.gameDuration;
+        const players: IPlayer[] = GameList.getGamePlayers(currGame);
+        const state: GameState = GameList.getGameState(currGame);
+
+        currArray.push(
+            <GameCard key={id} token={id} players={players} time={time} state={state} clickFunc={this.openModal}/>,
+        );
 
         return currArray;
     }
 
-    private fetchGames() {
-        fetch('/games/list', {
-            headers: {'Content-Type': "application/json"},
-        })
-            .then((response) => response.json())
-            .then((response) => {
-                this.setState({games: response.games.reduce(this.getGame, [])});
+    private async fetchGames(): Promise<void> {
+        try {
+            const {status, code, message, games}: IGetGamesListResponse = await fetchGamesList();
+            if (status === 'error') return this.handleRequestError(code, message);
 
-                setTimeout(this.fetchGames, 5000);
-            })
-            .catch((error: Error) => console.error('Error:', error));
+            this.setState({games: games.reduce(this.getGame, [])});
+
+            setTimeout(this.fetchGames, 5000);
+        } catch (error) {
+            console.error('Error:', error);
+
+            this.handleRequestError(500);
+        }
+    }
+
+    private handleRequestError(code: number, message: string = ''): void {
+        console.error('Error: ', message);
+
+        this.closeModal();
+        if (code === 404) this.props.gameWasRemovedAlert('Шаг не может быть совершен, игра была прервана');
+        if (code === 500) this.props.serverInternalErrorAlert();
     }
 }
 

@@ -1,12 +1,6 @@
 import * as React from 'react';
+import {IFieldCell} from "./FieldCellTypes";
 import * as styled from './styles';
-
-interface IFieldCell {
-    index: string;
-    svg?: JSX.Element;
-    clickHandler?: ([row, column]: number[]) => void;
-    className?: string;
-}
 
 class FieldCell extends React.Component<IFieldCell, {}> {
     constructor(props: IFieldCell) {
@@ -16,9 +10,11 @@ class FieldCell extends React.Component<IFieldCell, {}> {
     }
 
     public render(): JSX.Element {
+        const wrapperClassAttribute: string = `${this.props.className} ${!this.props.clickHandler ? 'active' : ''}`;
+        
         return (
             <div
-                className={`${this.props.className} ${!this.props.clickHandler ? 'active' : ''}`}
+                className={wrapperClassAttribute}
                 onClick={this.handleClick}
             >
                 <styled.SVGContainer>{this.props.svg}</styled.SVGContainer>

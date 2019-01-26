@@ -157,9 +157,9 @@ class GamesController {
             return currObj;
         }
 
-        const deltaTime: number = currObj.currTimestamp.getTime() - currGame.lastActivityTime.getTime();
-        if (deltaTime <= this.MAX_INACTIVITY_TIME)
-            currObj.correctGames.push({...currGame});
+        const deltaTime: number = subtractDates(currObj.currTimestamp, currGame.lastActivityTime);
+        if (deltaTime <= this.MAX_INACTIVITY_TIME) currObj.correctGames.push({...currGame});
+        if (deltaTime >= this.MAX_INACTIVITY_TIME * 2) currObj.gamesToRemove.push(currGame);
 
         return currObj;
     }
@@ -180,7 +180,7 @@ class GamesController {
         try {
             game = await repository.findOne(this.getAccessTokenCriteria());
         } catch (error) {
-            return res.json(getError(error, 404));
+            return res.json(getError('Game was not found', 404));
         }
 
         const who: string = this.getRequesterType(game);
@@ -233,14 +233,14 @@ class GamesController {
                 {gameToken: game.gameToken},
                 GamesController.getSurrenderData(gameDuration, nowTimestamp, who),
             );
+
+            res.json({
+                status: 'ok',
+                code: 0,
+            });
         } catch (error) {
             res.json(getError(error, 500));
         }
-
-        res.json({
-            status: 'ok',
-            code: 0,
-        });
     }
 
     private async getGameStatus(req: express.Request, res: express.Response) {
@@ -253,7 +253,7 @@ class GamesController {
         try {
             game = await repository.findOne(this.getAccessTokenCriteria());
         } catch (error) {
-            res.json(getError(error, 404));
+            return res.json(getError(error, 404));
         }
 
         const gameDuration: number = subtractDates(new Date(), game.timeOfStart);
@@ -265,21 +265,21 @@ class GamesController {
 
         try {
             await repository.update({gameToken: game.gameToken}, {gameDuration});
+
+            const youTurn: boolean = game.whomTurn === this.getRequesterType(game);
+            const winner: string = GamesController.getWinnerName(game);
+
+            res.json({
+                status: 'ok',
+                code: 0,
+                youTurn,
+                gameDuration,
+                field: game.field,
+                winner,
+            });
         } catch (error) {
             res.json(getError(error, 500));
         }
-
-        const youTurn: boolean = game.whomTurn === this.getRequesterType(game);
-        const winner: string = GamesController.getWinnerName(game);
-
-        res.json({
-            status: 'ok',
-            code: 0,
-            youTurn,
-            gameDuration,
-            field: game.field,
-            winner,
-        });
     }
 
     private async getGameData(req: express.Request, res: express.Response) {
@@ -292,11 +292,12 @@ class GamesController {
         try {
             game = await repository.findOne({gameToken});
         } catch (error) {
-            res.json(getError(error, 404));
+            return res.json(getError(error, 404));
         }
 
-        const {state, gameResult, gameDuration, field, owner, opponent} = game;
-        if (gameDuration > this.MAX_INACTIVITY_TIME && state !== GameState.DONE) {
+        const {state, gameResult, lastActivityTime, gameDuration, field, owner, opponent} = game;
+        const inactivityTime = subtractDates(new Date(), lastActivityTime);
+        if (inactivityTime > this.MAX_INACTIVITY_TIME && state !== GameState.DONE) {
             await repository.remove(game);
 
             return res.json(getError('Game has been removed due to inactivity', 404));
@@ -327,6 +328,8 @@ class GamesController {
         try {
             await repository.insert(newGame);
 
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+
             res.json({
                 status: 'ok',
                 code: 0,
@@ -350,7 +353,7 @@ class GamesController {
         try {
             game = await repository.findOne({gameToken});
         } catch (error) {
-            return res.json(getError(error, 500));
+            return res.json(getError(error, 404));
         }
 
         if (game.state === GameState.PLAYING) return res.json(getError("Game is already started", 403));

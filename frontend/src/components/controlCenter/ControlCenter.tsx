@@ -1,26 +1,27 @@
 import * as React from 'react';
-import Cookies from 'universal-cookie';
+import Cookies from '../../modules/cookie/Cookie';
+import {fetchNewGameAction} from "../../modules/fetch/FetchModule";
+import {ICreateGameResponse} from "../../modules/fetch/FetchModuleTypes";
 import {Button, ButtonContainer, TransparentButton, TransparentLinkButton} from '../button/Button';
 import Input from '../input/Input';
 import Modal from '../modal/Modal';
 import Preloader from '../preloader/Preloader';
 import Section from '../section/Section';
 import Span from "../span/Span";
-
-interface IControlCenterState {
-    isModalOpen: boolean;
-    isGameReady: boolean;
-    annotationToGameCreation: string;
-    currentGameToken: string;
-}
-
-interface IControlCenterProps {
-    userNameInputRef: React.RefObject<HTMLInputElement>;
-}
+import {IControlCenterProps, IControlCenterState} from "./ControlCenterTypes";
 
 export default class ControlCenter extends React.Component<IControlCenterProps, IControlCenterState> {
+
+    private static triggerUserNameInputError(input: HTMLInputElement): void {
+        input.classList.add('error');
+        input.focus();
+
+        return;
+    }
+
     constructor(props: any) {
         super(props);
+
         this.state = {
             isModalOpen: false,
             isGameReady: false,
@@ -36,11 +37,14 @@ export default class ControlCenter extends React.Component<IControlCenterProps, 
     }
 
     public render(): JSX.Element {
+        const userName = Cookies.get('userName');
+
         return (
             <Section backgroundColor='#fafafa'>
                 <Input
                     ref={this.props.userNameInputRef}
                     onChange={this.handleInputChange}
+                    value={userName}
                     placeholder="Введите ваше имя"
                     type="text"
                 />
@@ -64,7 +68,7 @@ export default class ControlCenter extends React.Component<IControlCenterProps, 
                 className='gameCreationModal'
             >
                 <Preloader isComplete={this.state.isGameReady}/>
-                <Span>{annotationToGameCreation}</Span>
+                <Span className='center'>{annotationToGameCreation}</Span>
                 <ButtonContainer>
                     <TransparentButton onClick={this.closeModal}>Отменить</TransparentButton>
                     <TransparentLinkButton
@@ -108,45 +112,42 @@ export default class ControlCenter extends React.Component<IControlCenterProps, 
         input.classList.remove('error');
     }
 
-    private tryToCreateGame(): void {
+    private async tryToCreateGame(): Promise<void> {
         const input: HTMLInputElement = this.props.userNameInputRef.current;
         if (!input) return;
 
         const inputValue: string = input.value;
-        if (inputValue === '') {
-            input.classList.add('error');
-            input.focus();
-
-            return;
-        }
+        if (inputValue === '') return ControlCenter.triggerUserNameInputError(input);
 
         this.openModal();
 
-        fetch('/games/new', {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                userName: inputValue,
-                size: 3,
-            }),
-        })
-            .then((response) => response.json())
-            .then((response) => {
-                const {status, code, gameToken, accessToken} = response;
-                if (status === 'ok' && code === 0) {
-                    const cookies = new Cookies();
-                    let gameCookies = cookies.get('games');
-                    if (!gameCookies) gameCookies = {};
+        try {
+            const {
+                status,
+                code,
+                message,
+                gameToken,
+                accessToken,
+            }: ICreateGameResponse = await fetchNewGameAction(inputValue);
 
-                    gameCookies[gameToken] = {
-                        accessToken,
-                        type: 'owner',
-                    };
-                    cookies.set('games', gameCookies, {path: '/'});
+            if (status === 'error') {
+                console.error('Error: ', message);
 
-                    this.setGameReady(gameToken);
-                }
-            })
-            .catch((error: Error) => console.error('Error:', error));
+                this.closeModal();
+                if (code === 500) this.props.serverInternalErrorAlert();
+
+                return;
+            }
+
+            Cookies.setGameCookies(gameToken, accessToken);
+            Cookies.setNameCookies(inputValue);
+
+            this.setGameReady(gameToken);
+        } catch (error) {
+            console.error('Error:', error);
+
+            this.closeModal();
+            this.props.serverInternalErrorAlert();
+        }
     }
 }

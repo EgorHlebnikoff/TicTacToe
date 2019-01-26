@@ -9,6 +9,14 @@ const StyledSpan: StylingFunction = (span: ElementToStyle): StyledElement => sty
     
     display: block;
     padding: 5px;
+    
+    .center {
+      text-align: center;
+    }
+    
+    .white {
+      color: #fafafa;
+    }
 `;
 
 export default StyledSpan;

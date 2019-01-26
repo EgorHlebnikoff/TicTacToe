@@ -1,6 +1,6 @@
 import {Game} from "../entity/Game";
 
-export interface IGameParams {
+interface IGameParams {
     gameToken: string;
     owner: string;
     opponent: string;
@@ -10,19 +10,19 @@ export interface IGameParams {
     state: string;
 }
 
-export interface ISortedGames {
+interface ISortedGames {
     correctGames: IGameParams[];
     gamesToRemove: Game[];
     currTimestamp: Date;
 }
 
-export interface IMakeStepParams {
+interface IMakeStepParams {
     row: number;
     column: number;
     who: string;
 }
 
-export interface IRequestParams {
+interface IRequestParams {
     userName?: string;
     size?: number;
     gameToken?: string;
@@ -31,3 +31,5 @@ export interface IRequestParams {
     row?: number;
     column?: number;
 }
+
+export {IRequestParams, IGameParams, IMakeStepParams, ISortedGames};

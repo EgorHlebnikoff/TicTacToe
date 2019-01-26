@@ -40,8 +40,7 @@ export const TransparentButton: StylingFunction = (button: ElementToStyle): Styl
   
   background-color: transparent;
   
-  margin: 20px;
-  margin-bottom: 0;
+  margin: 20px 20px 0 20px;
   
   transition: color .2s ease-in-out;
   
