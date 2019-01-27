@@ -1,16 +1,6 @@
 import * as React from 'react';
+import {IModal} from "./ModalTypes";
 import * as styled from "./styles";
-
-interface IModal {
-    isOpen: boolean;
-    closeByOutsideClick?: boolean;
-    closeByESC?: boolean;
-    beforeOpen?: () => void;
-    afterOpen?: () => void;
-    onClose: () => void;
-    title?: string;
-    className?: string;
-}
 
 class Modal extends React.Component<IModal, {}> {
     private modal: HTMLDivElement | null = null;

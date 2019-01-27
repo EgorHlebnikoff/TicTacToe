@@ -17,6 +17,7 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
     private readonly gameToken: string = this.props.match.params.gameToken;
     private readonly currPlayerAccessToken: string | null = this.setAccessToken();
     private readonly currPlayerStatus: UserType = this.setUserType();
+    private readonly currPlayerMark: string = this.setUserMark();
 
     private fetchGameStatusTimeout: WindowTimers | number = null;
     private fetchGameDataTimeout: WindowTimers | number = null;
@@ -43,6 +44,7 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
         this.handleSurrender = this.handleSurrender.bind(this);
         this.fetchGameData = this.fetchGameData.bind(this);
         this.fetchGameStatus = this.fetchGameStatus.bind(this);
+        this.closeAlertModal = this.closeAlertModal.bind(this);
     }
 
     public render(): JSX.Element {
@@ -125,6 +127,13 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
         return type === 'owner' ? UserType.OWNER : UserType.OPPONENT;
     }
 
+    private setUserMark(): string {
+        const gameCookies = Cookie.get('games');
+        if (!gameCookies || !gameCookies[this.gameToken]) return '?';
+
+        return gameCookies[this.gameToken].mark;
+    }
+
     private setAccessToken(): string | null {
         const gameCookies = Cookie.get('games');
         if (!gameCookies || !gameCookies[this.gameToken]) return null;
@@ -135,14 +144,14 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
     private async handleTurn([row, column]: number[]): Promise<void> {
         clearTimeout(this.fetchGameStatusTimeout as number);
 
-        const {field}: IGameScreenState = this.state;
-        const newField: string[] = [...field];
+        const newField: string[] = this.state.field.map((currRow: string, rowNum: number): string => {
+            if (rowNum !== row) return currRow;
 
-        newField[row] = field[row].split('').map((currCol: string, index: number): string => {
-            if (index !== column) return currCol;
+            const columns: string[] = currRow.split('');
+            columns[column] = this.currPlayerMark;
 
-            return this.currPlayerStatus === UserType.OWNER ? 'X' : 'O';
-        }).join('');
+            return columns.join('');
+        });
 
         this.setState({
             field: newField,
@@ -155,21 +164,11 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
                 this.currPlayerAccessToken,
             );
 
-            if (status === 'error') {
-                console.error('Error: ', message);
-
-                if (code === 403) this.unauthorizedAlert();
-                if (code === 404) this.gameWasRemovedAlert('Шаг не может быть совершен, игра была прервана');
-                if (code === 500) this.serverInternalErrorAlert();
-
-                return;
-            }
+            if (status === 'error') return this.handleRequestError(code, message);
 
             await this.fetchGameStatus();
         } catch (error) {
-            console.error('Error: ', error);
-
-            this.serverInternalErrorAlert();
+            this.handleRequestError(500, error);
         }
     }
 
@@ -177,17 +176,9 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
         try {
             const {status, code, message}: IErrorResponse = await fetchSurrenderAction(this.currPlayerAccessToken);
 
-            if (status === 'error') {
-                console.error('Error: ', message);
-
-                if (code === 403) this.unauthorizedAlert();
-                if (code === 404) this.gameWasRemovedAlert('Шаг не может быть совершен, игра была прервана');
-                if (code === 500) this.serverInternalErrorAlert();
-            }
+            if (status === 'error') return this.handleRequestError(code, message);
         } catch (error) {
-            console.error('Error: ', error);
-
-            this.serverInternalErrorAlert();
+            this.handleRequestError(500, error);
         }
     }
 
@@ -196,20 +187,11 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
             const data: IGameDataResponse = await fetchGameData(this.gameToken);
 
             const {status, code, message, state}: IGameDataResponse = data;
-            if (status === 'error') {
-                console.error('Error: ', message);
-
-                if (code === 404) this.gameWasRemovedAlert('Шаг не может быть совершен, игра была прервана');
-                if (code === 500) this.serverInternalErrorAlert();
-
-                return;
-            }
+            if (status === 'error') return this.handleRequestError(code, message);
 
             this.handleGameState(state, data);
         } catch (error) {
-            console.error('Error: ', error);
-
-            this.serverInternalErrorAlert();
+            this.handleRequestError(500, error);
         }
     }
 
@@ -277,21 +259,11 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
             const data: IGameStatusResponse = await fetchGameStatus(this.currPlayerAccessToken);
 
             const {status, code, message}: IGameStatusResponse = data;
-            if (status === 'error') {
-                console.error('Error: ', message);
-
-                if (code === 403) this.unauthorizedAlert();
-                if (code === 404) this.gameWasRemovedAlert('Шаг не может быть совершен, игра была прервана');
-                if (code === 500) this.serverInternalErrorAlert();
-
-                return;
-            }
+            if (status === 'error') return this.handleRequestError(code, message);
 
             this.handleFetchedGameStatusData(data);
         } catch (error) {
-            console.error('Error: ', error);
-
-            this.serverInternalErrorAlert();
+            this.handleRequestError(500, error);
         }
     }
 
@@ -308,5 +280,13 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
 
         if (gameState === GameState.PLAYING)
             this.fetchGameStatusTimeout = setTimeout(this.fetchGameStatus, 2000);
+    }
+
+    private handleRequestError(code: number, message: string): void {
+        console.error('Error: ', message);
+
+        if (code === 403) this.unauthorizedAlert();
+        if (code === 404) this.gameWasRemovedAlert('Шаг не может быть совершен, игра была прервана');
+        if (code === 500) this.serverInternalErrorAlert();
     }
 }

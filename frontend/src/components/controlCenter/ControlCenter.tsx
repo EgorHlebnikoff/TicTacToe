@@ -11,14 +11,6 @@ import Span from "../span/Span";
 import {IControlCenterProps, IControlCenterState} from "./ControlCenterTypes";
 
 export default class ControlCenter extends React.Component<IControlCenterProps, IControlCenterState> {
-
-    private static triggerUserNameInputError(input: HTMLInputElement): void {
-        input.classList.add('error');
-        input.focus();
-
-        return;
-    }
-
     constructor(props: any) {
         super(props);
 
@@ -55,31 +47,51 @@ export default class ControlCenter extends React.Component<IControlCenterProps, 
     }
 
     private renderModal(): JSX.Element {
-        const {isGameReady, annotationToGameCreation, isModalOpen} = this.state;
-        const continueButtonClassName = isGameReady ? 'continue' : '';
+        const {isModalOpen}: IControlCenterState = this.state;
 
         return (
             <Modal
-                title={'Создание игры'}
+                title='Создание игры'
                 isOpen={isModalOpen}
                 onClose={this.closeModal}
                 closeByOutsideClick={false}
                 closeByESC={false}
                 className='gameCreationModal'
             >
-                <Preloader isComplete={this.state.isGameReady}/>
+                {this.renderModalContent()}
+            </Modal>
+        );
+    }
+
+    private renderModalContent(): JSX.Element {
+        const {isGameReady, annotationToGameCreation}: IControlCenterState = this.state;
+
+        return (
+            <React.Fragment>
+                <Preloader isComplete={isGameReady}/>
                 <Span className='center'>{annotationToGameCreation}</Span>
                 <ButtonContainer>
-                    <TransparentButton onClick={this.closeModal}>Отменить</TransparentButton>
-                    <TransparentLinkButton
-                        className={continueButtonClassName}
-                        href={`/game/${this.state.currentGameToken}`}
-                        disabled={!isGameReady}
-                    >
-                        Перейти
-                    </TransparentLinkButton>
+                    {this.renderModalButtons(isGameReady)}
                 </ButtonContainer>
-            </Modal>
+            </React.Fragment>
+        );
+    }
+
+    private renderModalButtons(isGameReady: boolean): JSX.Element {
+        const {currentGameToken}: IControlCenterState = this.state;
+        const continueButtonClassName = isGameReady ? 'continue' : '';
+
+        return (
+            <React.Fragment>
+                <TransparentButton onClick={this.closeModal}>Отменить</TransparentButton>
+                <TransparentLinkButton
+                    className={continueButtonClassName}
+                    href={`/game/${currentGameToken}`}
+                    disabled={!isGameReady}
+                >
+                    Перейти
+                </TransparentLinkButton>
+            </React.Fragment>
         );
     }
 
@@ -112,42 +124,41 @@ export default class ControlCenter extends React.Component<IControlCenterProps, 
         input.classList.remove('error');
     }
 
+    private triggerUserNameInputError(): void {
+        const input: HTMLInputElement = this.props.userNameInputRef.current;
+
+        input.classList.add('error');
+        input.focus();
+
+        return;
+    }
+
     private async tryToCreateGame(): Promise<void> {
         const input: HTMLInputElement = this.props.userNameInputRef.current;
         if (!input) return;
 
         const inputValue: string = input.value;
-        if (inputValue === '') return ControlCenter.triggerUserNameInputError(input);
+        if (inputValue === '') return this.triggerUserNameInputError();
 
         this.openModal();
 
         try {
-            const {
-                status,
-                code,
-                message,
-                gameToken,
-                accessToken,
-            }: ICreateGameResponse = await fetchNewGameAction(inputValue);
+            const {status, message, gameToken, accessToken}: ICreateGameResponse = await fetchNewGameAction(inputValue);
+            if (status === 'error') return this.handlerRequestError(message);
 
-            if (status === 'error') {
-                console.error('Error: ', message);
-
-                this.closeModal();
-                if (code === 500) this.props.serverInternalErrorAlert();
-
-                return;
-            }
-
-            Cookies.setGameCookies(gameToken, accessToken);
+            Cookies.setGameCookies(gameToken, accessToken, 'owner');
             Cookies.setNameCookies(inputValue);
 
             this.setGameReady(gameToken);
         } catch (error) {
-            console.error('Error:', error);
-
-            this.closeModal();
-            this.props.serverInternalErrorAlert();
+            this.handlerRequestError(error);
         }
+    }
+
+    private handlerRequestError(message: string) {
+        console.error('Error:', message);
+
+        this.closeModal();
+        this.props.serverInternalErrorAlert();
     }
 }

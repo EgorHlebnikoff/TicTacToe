@@ -7,12 +7,7 @@ import Header from '../components/header/Header';
 import Modal from "../components/modal/Modal";
 import Span from "../components/span/Span";
 import GlobalStyle from '../globalStyles';
-
-interface IMainScreenState {
-    isAlertModalOpen: boolean;
-    alertMessage: string;
-    callback?: () => Promise<void>;
-}
+import {IMainScreenState} from "./types/MainScreenTypes";
 
 class MainScreen extends React.Component<{}, IMainScreenState> {
     private userNameInputRef: React.RefObject<HTMLInputElement> = React.createRef<HTMLInputElement>();
@@ -27,6 +22,7 @@ class MainScreen extends React.Component<{}, IMainScreenState> {
 
         this.gameWasRemovedAlert = this.gameWasRemovedAlert.bind(this);
         this.serverInternalErrorAlert = this.serverInternalErrorAlert.bind(this);
+        this.closeAlertModal = this.closeAlertModal.bind(this);
     }
 
     public render(): JSX.Element {

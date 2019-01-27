@@ -24,12 +24,12 @@ interface IGameDataResponse extends IGameResponse {
 }
 
 interface ICreateGameResponse extends IErrorResponse {
-    gameToken: string;
-    accessToken: string;
+    gameToken?: string;
+    accessToken?: string;
 }
 
 interface IGetGamesListResponse extends IErrorResponse {
-    games: IGameParams[];
+    games?: IGameParams[];
 }
 
 interface IJoinGameResponse extends IErrorResponse {

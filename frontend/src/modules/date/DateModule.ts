@@ -1,8 +1,4 @@
-interface IDate {
-    hours: string;
-    minutes: string;
-    seconds: string;
-}
+import {IDate} from "./DateModuleTypes";
 
 function getTimeFromMilliseconds(time: number): IDate {
     const milliseconds: number = time;

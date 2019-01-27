@@ -1,25 +1,8 @@
 import * as React from "react";
 import getTime from "../../modules/date/DateModule";
 import Span from "../span/Span";
+import {GameState, IGameCard, IPlayer} from "./GameCardTypes";
 import * as styled from './styles';
-
-export enum PlayerState {WON = "WON", LOST = "LOST", DRAW = "DRAW"}
-
-export enum GameState {WAITING = "WAITING", PLAYING = "PLAYING", ENDED = "ENDED"}
-
-export interface IPlayer {
-    name: string;
-    state?: PlayerState;
-}
-
-export interface IGameCard {
-    players: IPlayer[];
-    state: GameState;
-    time: number;
-    token: string;
-    className?: string;
-    clickFunc: (gameToken: string, state: string) => void;
-}
 
 class GameCard extends React.Component<IGameCard, {}> {
     private static getPlayer(currArray: JSX.Element[], currPlayer: IPlayer, index: number): JSX.Element[] {

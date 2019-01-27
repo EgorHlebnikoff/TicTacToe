@@ -3,7 +3,8 @@ import {
     IErrorResponse,
     IGameDataResponse,
     IGameStatusResponse,
-    IGetGamesListResponse, IJoinGameResponse
+    IGetGamesListResponse,
+    IJoinGameResponse
 } from "./FetchModuleTypes";
 
 async function fetchGameData(gameToken: string): Promise<IGameDataResponse> {

@@ -10,11 +10,11 @@ const StyledSpan: StylingFunction = (span: ElementToStyle): StyledElement => sty
     display: block;
     padding: 5px;
     
-    .center {
+    &.center {
       text-align: center;
     }
     
-    .white {
+    &.white {
       color: #fafafa;
     }
 `;

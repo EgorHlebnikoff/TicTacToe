@@ -34,7 +34,7 @@ const Checkmark: Keyframes = keyframes`
   }
 `;
 
-export const PreloaderCheckmark: StyledElement = styled('div')`
+export const PreloaderCheckMark: StyledElement = styled('div')`
   display: none;
   
   --check-height: ${checkHeight};
