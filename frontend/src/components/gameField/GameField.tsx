@@ -18,10 +18,13 @@ export default class GameField extends React.Component<IGameField, {}> {
     }
 
     public render(): JSX.Element {
+        const {gameState}: IGameField = this.props;
+        const fieldClassName: string = `${gameState === GameState.WAITING ? 'hidden' : ''}`;
+
         return (
             <styled.FieldContainer>
                 <styled.Annotation>{this.getAnnotation()}</styled.Annotation>
-                <styled.Field>{this.getFieldCells()}</styled.Field>
+                <styled.Field className={fieldClassName}>{this.getFieldCells()}</styled.Field>
                 <Span>{getTime(this.props.time)}</Span>
                 {this.renderButton()}
             </styled.FieldContainer>

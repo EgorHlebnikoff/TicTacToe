@@ -111,7 +111,11 @@ export default class ControlCenter extends React.Component<IControlCenterProps, 
     }
 
     private closeModal(): void {
-        this.setState({isModalOpen: false});
+        this.setState({
+            isGameReady: false,
+            isModalOpen: false,
+            annotationToGameCreation: 'Ваша игра готовится...',
+        });
     }
 
     private handleInputChange(): void {

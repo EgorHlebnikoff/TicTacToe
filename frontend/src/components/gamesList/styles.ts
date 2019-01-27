@@ -15,6 +15,12 @@ export const StyledGamesList: StylingFunction = (item: ElementToStyle): StyledEl
   grid-template-columns: repeat(var(--grid-columns), 1fr);
   width: var(--container-width);
   
+  &.flex {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
   @media (max-width: 1320px) {
     --grid-columns: 5;
   }

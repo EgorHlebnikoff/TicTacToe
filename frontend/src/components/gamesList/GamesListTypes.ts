@@ -14,6 +14,7 @@ interface IGameParams {
 
 interface IGameListState {
     games: JSX.Element[];
+    listOfGamesAnnotation: string;
     isModalOpen: boolean;
     currentGameToken: string;
     currentGameState: string;

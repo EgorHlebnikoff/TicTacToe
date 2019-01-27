@@ -50,6 +50,7 @@ class GameList extends React.Component<IGameList, IGameListState> {
 
         this.state = {
             games: [],
+            listOfGamesAnnotation: 'Список игр загружается...',
             isModalOpen: false,
             currentGameToken: '',
             currentGameState: '',
@@ -71,11 +72,12 @@ class GameList extends React.Component<IGameList, IGameListState> {
     }
 
     public render(): JSX.Element {
-        const emptyListSpan: JSX.Element = <Span classList='center white'>Список игр пуст</Span>;
+        const {listOfGamesAnnotation}: IGameListState = this.state;
+        const isListOfGamesEmpty: boolean = this.state.games.length === 0;
 
         return (
-            <section key="gamesList" className={this.props.className}>
-                {this.state.games.length === 0 ? emptyListSpan : this.state.games}
+            <section key="gamesList" className={`${this.props.className} ${isListOfGamesEmpty ? 'flex' : ''}`}>
+                {isListOfGamesEmpty ? <Span className='center white'>{listOfGamesAnnotation}</Span> : this.state.games}
                 {this.state.isModalOpen && this.renderModal()}
             </section>
         );
@@ -331,7 +333,12 @@ class GameList extends React.Component<IGameList, IGameListState> {
             const {status, code, message, games}: IGetGamesListResponse = await fetchGamesList();
             if (status === 'error') return this.handleRequestError(code, message);
 
-            this.setState({games: games.reduce(this.getGame, [])});
+            const gameCards: JSX.Element[] = games.reduce(this.getGame, []);
+
+            this.setState({
+                games: gameCards,
+                listOfGamesAnnotation: gameCards.length === 0 ? 'Список игр пуст' : '',
+            });
 
             setTimeout(this.fetchGames, 5000);
         } catch (error) {

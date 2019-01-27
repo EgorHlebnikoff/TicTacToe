@@ -37,6 +37,7 @@ export const Field: StyledElement = styled('div')`
   --grid-gap-size: 10px;
 
   display: grid;
+  position: relative;
   grid-gap: var(--grid-gap-size);
   padding: var(--grid-gap-size);
   margin: 20px;
@@ -46,6 +47,18 @@ export const Field: StyledElement = styled('div')`
   background-color: #7966fd;
   
   box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  
+  &.hidden {
+    &::before {
+      content: '';
+      display: block;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 10px;
+      background-color: rgba(51, 51, 51, 0.5);
+    }
+  }
 `;
 
 export const FieldContainer: StyledElement = styled('section')`

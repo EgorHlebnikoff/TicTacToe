@@ -6,7 +6,7 @@ import getError from '../service/ErrorHandler';
 import checkGameState from '../utils/Checker';
 import subtractDates from '../utils/DatesWorker';
 import {randomAlphanumericString} from "../utils/Random";
-import {IMakeStepParams, IRequestParams, ISortedGames} from "./ControllersTypes";
+import {IGameParams, IMakeStepParams, IRequestParams, ISortedGames} from "./ControllersTypes";
 
 class GamesController {
     private static setNewGameParams(newGame: Game, {userName, size}: { userName: string, size: number }) {
@@ -151,14 +151,27 @@ class GamesController {
     }
 
     private sortGames(currObj: ISortedGames, currGame: Game): ISortedGames {
+        const gameParams: IGameParams = {
+            gameToken: currGame.gameToken,
+            owner: currGame.owner,
+            opponent: currGame.opponent,
+            size: currGame.size,
+            gameDuration: currGame.gameDuration,
+            gameResult: currGame.gameResult,
+            state: currGame.state,
+        };
+
         if (currGame.state === GameState.DONE) {
-            currObj.correctGames.push({...currGame});
+            currObj.correctGames.doneState.push(gameParams);
 
             return currObj;
         }
 
         const deltaTime: number = subtractDates(currObj.currTimestamp, currGame.lastActivityTime);
-        if (deltaTime <= this.MAX_INACTIVITY_TIME) currObj.correctGames.push({...currGame});
+        if (deltaTime <= this.MAX_INACTIVITY_TIME) {
+            if (currGame.state === GameState.READY) currObj.correctGames.waitingState.push(gameParams);
+            if (currGame.state === GameState.PLAYING) currObj.correctGames.playingState.push(gameParams);
+        }
         if (deltaTime >= this.MAX_INACTIVITY_TIME * 2) currObj.gamesToRemove.push(currGame);
 
         return currObj;
@@ -385,12 +398,20 @@ class GamesController {
         const currTimestamp: Date = new Date();
 
         try {
-            gameObjects = await repository.find();
+            gameObjects = await repository.find({order: {id: 'DESC'}});
         } catch (error) {
             return res.json(getError(error, 500));
         }
 
-        const initialSortedGamesObj: ISortedGames = {correctGames: [], gamesToRemove: [], currTimestamp};
+        const initialSortedGamesObj: ISortedGames = {
+            correctGames: {
+                waitingState: [],
+                playingState: [],
+                doneState: [],
+            },
+            gamesToRemove: [],
+            currTimestamp,
+        };
         const {correctGames, gamesToRemove} = gameObjects.reduce(this.sortGames, initialSortedGamesObj);
 
         if (gamesToRemove.length !== 0) await repository.remove(gamesToRemove);
@@ -398,7 +419,7 @@ class GamesController {
         res.json({
             status: 'ok',
             code: 0,
-            games: correctGames,
+            games: [...correctGames.waitingState, ...correctGames.playingState, ...correctGames.doneState],
         });
     }
 }

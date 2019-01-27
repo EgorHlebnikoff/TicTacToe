@@ -10,8 +10,14 @@ interface IGameParams {
     state: string;
 }
 
+interface ICorrectGames {
+    waitingState: IGameParams[];
+    playingState: IGameParams[];
+    doneState: IGameParams[];
+}
+
 interface ISortedGames {
-    correctGames: IGameParams[];
+    correctGames: ICorrectGames;
     gamesToRemove: Game[];
     currTimestamp: Date;
 }
