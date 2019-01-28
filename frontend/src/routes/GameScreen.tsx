@@ -8,6 +8,7 @@ import Modal from "../components/modal/Modal";
 import PlayerBar from '../components/playerBar/PlayerBar';
 import Span from "../components/span/Span";
 import GlobalStyle from '../globalStyles';
+import checkGameState from "../modules/checker/Checker";
 import Cookie from "../modules/cookie/Cookie";
 import {fetchDoStepAction, fetchGameData, fetchGameStatus, fetchSurrenderAction} from "../modules/fetch/FetchModule";
 import {IErrorResponse, IGameDataResponse, IGameStatusResponse} from "../modules/fetch/FetchModuleTypes";
@@ -119,31 +120,41 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
     }
 
     private setUserType(): UserType {
+        // Получаем куки игр, если они отсутсвуют или в них нет информации о текущей игре
+        // распознаем пользователя как зрителя и отдаем нужное состояние
         const gameCookies = Cookie.get('games');
         if (!gameCookies || !gameCookies[this.gameToken]) return UserType.VIEWER;
 
+        // Получаем тип пользователя из куков, и отдаем нужное состояние, в зависимости от полученного типа
         const {type}: { type: string } = gameCookies[this.gameToken];
 
         return type === 'owner' ? UserType.OWNER : UserType.OPPONENT;
     }
 
     private setUserMark(): string {
+        // Получаем куки игр, если они отсутствуют, или в них не информации о существующей игре
+        // отдаем знак пустой ячейки
         const gameCookies = Cookie.get('games');
         if (!gameCookies || !gameCookies[this.gameToken]) return '?';
 
+        // Возращаем знак из куков
         return gameCookies[this.gameToken].mark;
     }
 
     private setAccessToken(): string | null {
+        // Получаем куки игр, если они отсутствуют, или в них не информации о существующей игре отдаем null
         const gameCookies = Cookie.get('games');
         if (!gameCookies || !gameCookies[this.gameToken]) return null;
 
+        // Возращаем accessToken из куков
         return gameCookies[this.gameToken].accessToken;
     }
 
     private async handleTurn([row, column]: number[]): Promise<void> {
         clearTimeout(this.fetchGameStatusTimeout as number);
 
+        // Преобразуем текущее поле в новое, путем обхода строк и замены нужного символа
+        // в полученном столбце полученной строки на знак игрока
         const newField: string[] = this.state.field.map((currRow: string, rowNum: number): string => {
             if (rowNum !== row) return currRow;
 
@@ -153,11 +164,12 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
             return columns.join('');
         });
 
-        this.setState({
-            field: newField,
-            youTurn: false,
-        });
+        const newGameState: string = checkGameState(newField);
 
+        this.setAfterTurnGameState(newField, newGameState);
+
+        // Передаем информацию о ходе серверу, если сервер обработал корректно - получем существующий статус игры,
+        // иначе обрабатываем ошибку
         try {
             const {status, code, message}: IErrorResponse = await fetchDoStepAction(
                 [row, column],
@@ -172,7 +184,31 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
         }
     }
 
+    private setAfterTurnGameState(newField: string[], newGameState: string): void {
+        // Если новое состояние - состояние игры или пользователь является зрителем - меняем только поле и флаг шага
+        if (newGameState === 'playing' || this.currPlayerStatus === UserType.VIEWER) {
+            this.setState({
+                field: newField,
+                youTurn: false,
+            });
+
+            return;
+        }
+
+        // Если состояние игры стало "ничья" или "победа" - выставляет нужное состояние и победителя, если есть
+        const gameState: GameState = newGameState === 'won' ? GameState.WON : GameState.DRAW;
+        const winner: string = gameState === GameState.WON ? this.state.players[this.currPlayerStatus] : null;
+
+        this.setState({
+            field: newField,
+            youTurn: false,
+            gameState,
+            winner,
+        });
+    }
+
     private async handleSurrender(): Promise<void> {
+        // Отдаем серверу на обработку сообщение о том, что игрок сдался, если сервер вернул ошибку - обрабатываем её
         try {
             const {status, code, message}: IErrorResponse = await fetchSurrenderAction(this.currPlayerAccessToken);
 
@@ -183,6 +219,7 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
     }
 
     private async fetchGameData(): Promise<void> {
+        // Получаем данные игры с сервера, если все хорошо - обрабатываем их, иначе - обрабатываем ошибку
         try {
             const data: IGameDataResponse = await fetchGameData(this.gameToken);
 
@@ -205,6 +242,8 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
         let gameState: GameState;
         let winner: string;
 
+        // Устанавливаем корретное состояние игры, в зависимости от полученного состояния с сервера,
+        // если ига была закончена победой - устанавливаем победителя
         if (gameResult === 'draw') {
             gameState = GameState.DRAW;
         } else {
@@ -225,6 +264,7 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
     }
 
     private gameReadyStateHandler({owner, opponent, gameDuration, field}: IGameDataResponse) {
+        // Устанавливаем нужные состояния, затем устанавливаем таймер на следующее обращение к серверу
         this.setState({
             time: gameDuration,
             players: {
@@ -239,6 +279,8 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
     }
 
     private gamePlayingStateHandler({owner, opponent, gameDuration, field}: IGameDataResponse) {
+        // Устанавливаем нужные состояния, затем, если пользователь является игроком
+        // - запрашиваем нынешнее состояние с сервера, иначе устанавливаем таймер на следующее обращение к серверу
         this.setState({
             time: gameDuration,
             players: {
@@ -255,6 +297,7 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
     }
 
     private async fetchGameStatus(): Promise<void> {
+        // Получаем статус игры с сервера, если все хорошо - обрабатываем его, иначе - обрабатываем ошибку
         try {
             const data: IGameStatusResponse = await fetchGameStatus(this.currPlayerAccessToken);
 
@@ -270,6 +313,7 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
     private handleFetchedGameStatusData({...data}: IGameStatusResponse): void {
         const {youTurn, gameDuration, field, winner}: IGameStatusResponse = data;
 
+        // Устанавливаем корретное состояние игры и таймер, на следующее обращение к серверу, за статусом игры
         const gameState: GameState = winner && winner !== ''
             ? winner === 'draw'
                 ? GameState.DRAW
@@ -283,6 +327,8 @@ export default class GameScreen extends React.Component<IGameScreenProps, IGameS
     }
 
     private handleRequestError(code: number, message: string): void {
+        // В зависимости от переданного кода ошибки и сообщения, выводим сообщение в консоль
+        // и вызываем необходимую функцию открывающую модальное окно с правильным сообщением
         console.error('Error: ', message);
 
         if (code === 403) this.unauthorizedAlert();

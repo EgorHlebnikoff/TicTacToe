@@ -14,25 +14,29 @@ import StyledGameList, {PreloaderContainer} from './styles';
 
 class GameList extends React.Component<IGameList, IGameListState> {
     private static getGamePlayers(playersParams: IPlayersParams): IPlayer[] {
-        const players: IPlayer[] = [];
+        return [
+            this.getPlayer(playersParams.owner, playersParams.gameResult, 'owner'),
+            this.getPlayer(playersParams.opponent, playersParams.gameResult, 'opponent'),
+        ];
+    }
 
-        const firstPlayer: IPlayer = {
-            name: playersParams.owner,
+    private static getPlayer(name: string, gameResult: string, type: string): IPlayer {
+        const player: IPlayer = {
+            name,
         };
-        if (playersParams.gameResult === 'owner') firstPlayer.state = PlayerState.WON;
-        if (playersParams.gameResult === 'draw') firstPlayer.state = PlayerState.DRAW;
-        if (playersParams.gameResult === 'opponent') firstPlayer.state = PlayerState.LOST;
-        players.push(firstPlayer);
 
-        const secondPlayer: IPlayer = {
-            name: playersParams.opponent,
-        };
-        if (playersParams.gameResult === 'opponent') secondPlayer.state = PlayerState.WON;
-        if (playersParams.gameResult === 'draw') secondPlayer.state = PlayerState.DRAW;
-        if (playersParams.gameResult === 'owner') secondPlayer.state = PlayerState.LOST;
-        players.push(secondPlayer);
+        // Если gameResult равен пустой строке - возвращаем объект игрока
+        // Иначе устанавливаем нужное состояние в зависимости от gameResult и типа игрока,
+        // и затем возвращаем объект игрока
+        if (gameResult === '') return player;
 
-        return players;
+        if (gameResult === 'draw') player.state = PlayerState.DRAW;
+        if (gameResult === type)
+            player.state = PlayerState.WON;
+        else
+            player.state = PlayerState.LOST;
+
+        return player;
     }
 
     private static getGameState({state}: { state: string }): GameState {
@@ -145,9 +149,12 @@ class GameList extends React.Component<IGameList, IGameListState> {
     private getButtons(isAllowedToContinue: boolean): JSX.Element {
         const {isCanToTryToConnect, currentGameToken}: IGameListState = this.state;
 
+        // Если пользователю разрешено продолжить переход к игре - отрисовываем компонент с корректной ссылкой.
+        // и делаем кнопку перехода активной для перехода, но не активной, для для попытки соединения.
+        // Иначе отрисовываем с якорем наверх и активной кнопкой, для попытки перехода
         const linkButtonHref: string = `${isAllowedToContinue ? `/game/${currentGameToken}` : '#'}`;
-        const linkButtonClassList: string = `${!isAllowedToContinue ? 'joinGame' : ''} ` +
-            `${isCanToTryToConnect ? 'continue' : ''}`;
+        const linkButtonClassList: string = `${!isCanToTryToConnect ? 'joinGame' : ''} ` +
+            `${isAllowedToContinue ? 'continue' : ''}`;
 
         return (
             <React.Fragment>
@@ -168,13 +175,16 @@ class GameList extends React.Component<IGameList, IGameListState> {
         if (this.state.isModalOpen) return;
 
         const isAlreadyInGame: () => boolean = (): boolean => {
+            // Если куки не существуют возвращем false
             if (!Cookies.doesExist('games')) return false;
             const currGameCookies = Cookies.get('games')[gameToken];
 
-            return (currGameCookies as boolean)
-                && (currGameCookies.type === 'owner' || currGameCookies.type === 'opponent');
+            // Проверяем тип пользователя, чтобы определить то, осуществлялся ли им вход в игру
+            return (currGameCookies.type === 'owner' || currGameCookies.type === 'opponent');
         };
 
+        // Если пользователь уе подключен к игре или состояние игры отличаетс от "Ожидание",
+        // то разрешаем пользователю продолжить переход к игре
         const isAllowedToContinue = isAlreadyInGame() || state !== 'WAITING';
 
         this.setState({
@@ -210,8 +220,12 @@ class GameList extends React.Component<IGameList, IGameListState> {
         const input: HTMLInputElement = this.modalInputRef.current;
         const isEmptyValue: boolean = input.value === '';
 
+        // Если поле находится в сотоянии ошибки, то снимаем это состояние
         if (input.classList.contains('error')) input.classList.remove('error');
 
+        // Если поле пустое и пользователю все еще нельзя пытаться подключиться
+        // или поле не пустое, и пользователю уже уже можно пытаться подключиться
+        // то не меняем сосояние
         if (isEmptyValue && !this.state.isCanToTryToConnect) return;
         if (!isEmptyValue && this.state.isCanToTryToConnect) return;
 
@@ -220,15 +234,21 @@ class GameList extends React.Component<IGameList, IGameListState> {
 
     private async redirectToGameHandler(event: MouseEvent): Promise<void> {
         const eventTarget: HTMLLinkElement = event.target as HTMLLinkElement;
+        // Если пользователю не разрешено осуществлять попытку присоединения
+        // - то возращаемся из функции и позволяем перейти в игру
         if (!eventTarget.classList.contains('joinGame')) return;
 
         event.preventDefault();
 
+        // Получаем необходимые для перехода в игре параметры, возвращаемся из функции, если не удается
         const {userName, gameToken, error} = this.getJoinGameParams();
         if (error) return;
 
+        // Возвращаемся из функции, если не удается открыть прелоадер
         if (!this.openPreloader()) return;
 
+        // Делаем запрос для входа в игру на сервер, если все хорошо - обрабатываем полученные данные
+        // иначе - обрабатываем ошибку
         try {
             const {
                 status,
@@ -249,9 +269,11 @@ class GameList extends React.Component<IGameList, IGameListState> {
     private handleJoinGameResponse(userName: string, gameToken: string, accessToken: string) {
         this.setState({isConnected: true});
 
+        // Устаналиваем куки игры и имени пользователя
         Cookies.setGameCookies(gameToken, accessToken, 'opponent');
         Cookies.setNameCookies(userName);
 
+        // Редиректим пользователя в игру через 1 секунду
         setTimeout(() => window.location.href = `/game/${gameToken}`, 1000);
     }
 
@@ -265,6 +287,8 @@ class GameList extends React.Component<IGameList, IGameListState> {
     }
 
     private getJoinGameParams(): { userName: string; gameToken: string; error: boolean } {
+        // Поочередно пытаемся получить параметры, имя пользователя и gameToken,
+        // если не удается - возвращаем пустой объект с ошибкой
         const userName: string | false = this.getUserName();
         if (!userName) return {userName: '', gameToken: '', error: true};
 
@@ -329,6 +353,10 @@ class GameList extends React.Component<IGameList, IGameListState> {
     }
 
     private async fetchGames(): Promise<void> {
+        // Делаем запрос на сервер, для получения списка игр,
+        // если все хорошо - получем элементы на основе полученных данных
+        // и устанавливаем таймер на следущий оспрос сервера,
+        // иначе обрабатываем ошибку
         try {
             const {status, code, message, games}: IGetGamesListResponse = await fetchGamesList();
             if (status === 'error') return this.handleRequestError(code, message);
@@ -347,6 +375,8 @@ class GameList extends React.Component<IGameList, IGameListState> {
     }
 
     private handleRequestError(code: number, message: string = ''): void {
+        // Выводим сообщение об ошибке в консоль и открываем модальное окно с сообщением,
+        // в зависимости от кода ошибки и переданного сообщения
         console.error('Error: ', message);
 
         this.closeModal();

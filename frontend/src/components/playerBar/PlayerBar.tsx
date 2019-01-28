@@ -38,9 +38,11 @@ export default class PlayerBar extends React.Component<IPlayerBar, {}> {
     }
 
     private renderOpponent(playerType: UserType): JSX.Element {
+        // Получаем имя оппонента, если оно отсутствует - устанавливаем замену
         const {opponent}: IPlayers = this.props.players;
-        const name: string = opponent && opponent !== '' ? opponent : this.playerNamePlaceHolder;
+        const name: string = opponent !== '' ? opponent : this.playerNamePlaceHolder;
 
+        // Если имя не является заранее подготовленной заменой - получаем svg оппонента
         const svg: JSX.Element = name !== this.playerNamePlaceHolder
             && PlayerBar.getSVG(UserType.OPPONENT, playerType === UserType.OPPONENT);
 

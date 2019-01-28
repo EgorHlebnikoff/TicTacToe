@@ -2,7 +2,7 @@ import {RouteComponentProps} from "react-router";
 
 enum GameState {WAITING, PLAYING, WON, DRAW}
 
-enum UserType {OWNER, OPPONENT, VIEWER}
+enum UserType {OWNER = 'owner', OPPONENT = 'opponent', VIEWER = 'viewer'}
 
 interface IMatchParams {
     gameToken: string;

@@ -8,6 +8,7 @@ class Modal extends React.Component<IModal, {}> {
     constructor(props: IModal) {
         super(props);
 
+        //Если была передана функция до вызова перед открытие - вызоваем её
         if (this.props.beforeOpen)
             this.props.beforeOpen();
 
@@ -16,16 +17,21 @@ class Modal extends React.Component<IModal, {}> {
     }
 
     public componentDidMount(): void {
-        if (this.props.afterOpen) this.props.afterOpen();
+        const {afterOpen, closeByESC, closeByOutsideClick}: IModal = this.props;
 
-        if (this.props.closeByESC)
+        //Если была передана функция до вызова после открытие - вызоваем её
+        if (afterOpen) afterOpen();
+
+        // Вешаем обработчики событий на закрытие модального окна, если таковые были запрошены
+        if (closeByESC)
             window.addEventListener('keyup', this.handleKeyUp, false);
 
-        if (this.props.closeByOutsideClick)
+        if (closeByOutsideClick)
             document.addEventListener('click', this.handleOutsideClick, false);
     }
 
     public componentWillUnmount(): void {
+        // Снимаем обработчики событий на закрытие модального окна
         window.removeEventListener('keyup', this.handleKeyUp, false);
         document.removeEventListener('click', this.handleOutsideClick, false);
     }
@@ -50,13 +56,14 @@ class Modal extends React.Component<IModal, {}> {
 
     private handleKeyUp(e: KeyboardEvent): void {
         const {onClose}: IModal = this.props;
+
+        // Если нажатая кнопка является кнопкой ESC - закрываем модальное окно
         const ESCKeyCode: string = '27';
 
         if (e.key !== ESCKeyCode) return;
 
         e.preventDefault();
         onClose();
-        window.removeEventListener('keyup', this.handleKeyUp, false);
     }
 
     private handleOutsideClick(e: MouseEvent): void {
@@ -64,6 +71,7 @@ class Modal extends React.Component<IModal, {}> {
 
         if (!this.modal || this.modal.contains(e.target as HTMLElement)) return;
 
+        // Если если клик произошел вне области модального окна - закрываем модальное окно
         onClose();
         document.removeEventListener('click', this.handleOutsideClick, false);
     }

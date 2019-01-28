@@ -141,11 +141,16 @@ export default class ControlCenter extends React.Component<IControlCenterProps, 
         const input: HTMLInputElement = this.props.userNameInputRef.current;
         if (!input) return;
 
+        // Получаем имя пользователя из поля ввода, если имя отсутствуем - возвращем ошибку
         const inputValue: string = input.value;
         if (inputValue === '') return this.triggerUserNameInputError();
 
         this.openModal();
 
+        // Делаем запрос на сервер для создания игры,
+        // если все хорошо - устанавливаем куки игры и имени пользователя
+        // и затем устанавливаем состояние "игра готова",
+        // иначе - обрабатываем ошибку
         try {
             const {status, message, gameToken, accessToken}: ICreateGameResponse = await fetchNewGameAction(inputValue);
             if (status === 'error') return this.handlerRequestError(message);

@@ -13,10 +13,7 @@ class FieldCell extends React.Component<IFieldCell, {}> {
         const wrapperClassAttribute: string = `${this.props.className} ${!this.props.clickHandler ? 'active' : ''}`;
         
         return (
-            <div
-                className={wrapperClassAttribute}
-                onClick={this.handleClick}
-            >
+            <div className={wrapperClassAttribute} onClick={this.handleClick}>
                 <styled.SVGContainer>{this.props.svg}</styled.SVGContainer>
             </div>
         );

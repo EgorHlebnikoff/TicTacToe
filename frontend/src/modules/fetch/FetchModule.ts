@@ -4,8 +4,8 @@ import {
     IGameDataResponse,
     IGameStatusResponse,
     IGetGamesListResponse,
-    IJoinGameResponse
-} from "./FetchModuleTypes";
+    IJoinGameResponse,
+} from "./FetchModuleypes";
 
 async function fetchGameData(gameToken: string): Promise<IGameDataResponse> {
     try {

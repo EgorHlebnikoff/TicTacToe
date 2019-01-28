@@ -35,16 +35,18 @@ export default class GameField extends React.Component<IGameField, {}> {
         const {userType, winner}: IGameField = this.props;
         const {owner, opponent}: IPlayers = this.props.players;
 
+        // Если тип пользователя совпадает с тем, кто победил - возвращаем true, иначе false
         return (userType === UserType.OWNER && winner === owner)
             || (userType === UserType.OPPONENT && winner === opponent);
     }
 
     private provideClickHandler(): boolean {
+        // Если сейчас ход текущего пользователя и игра в состоянии "игра" - разрешаем передать обработчик
         return this.props.youTurn && this.props.gameState === GameState.PLAYING;
     }
 
     private isNonEmptyCell(cellType: string): boolean {
-        return this.cellsTypes.some((item: string) => item === cellType);
+        return cellType in this.cellsTypes;
     }
 
     private getAnnotation(): string {
@@ -86,8 +88,11 @@ export default class GameField extends React.Component<IGameField, {}> {
     }
 
     private getCells(acc: JSX.Element[], currRow: string, row: number): JSX.Element[] {
+        // Разбиваем текущую строку на массив символов
         const rowArray: string[] = currRow.split('');
 
+        // Для каждого символа в строке считаем индекс в матрице,
+        // проверяем тип ячейки и в зависимости от этого отдаем нужную ячейку
         rowArray.forEach((currCell: string, column: number) => {
             currCell = currCell.toLowerCase();
             const key: number = (row * currRow.length) + column;
@@ -110,6 +115,7 @@ export default class GameField extends React.Component<IGameField, {}> {
     }
 
     private getFieldCells(): JSX.Element[] {
+        // Преобразуем переданное поле в ячейки
         return this.props.field.reduce(this.getCells, []);
     }
 }
