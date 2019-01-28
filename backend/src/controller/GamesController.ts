@@ -41,21 +41,34 @@ class GamesController {
     }
 
     private static getGameResult(gameState: string, who?: string): GameResult {
+        // Выставляем нужный статус игры, в зависимости от нынешнего состояния.
+        // Если игра в процессе или наступила ничья, то одаем состояния NO_RESULT и DRAW соответственно
         if (gameState === 'playing') return GameResult.NO_RESULT;
         if (gameState === 'draw') return GameResult.DRAW;
 
+        // Если игра завершилась чьей-то победой,
+        // то определяем чьей в зависимости от пришедшего параметра и отдаем нужное состояние
         if (who === 'owner') return GameResult.OWNER;
 
         return GameResult.OPPONENT;
     }
 
     private static makeStep(field: string[], {row, column, who}: IMakeStepParams): string[] {
+        // Преобразуем существущую матрицу в поля, в матрицу поля после совершеного хода
+
+        // Сначала обходим каждую строку в матрице
         return field.map((currRow: string, rowNum: number): string => {
+            // Если строка не совпадает с той, в котором был совершен ход, то возращаем её без изменений
             if (rowNum !== row) return currRow;
 
+            // Когда нашли строку, в которой был совершен ход - разбиваем её на массив символов
+            // и преобразуем его в новый с учетом сделанного хода, затем собираем в строку и возвращаем
             return currRow.split('').map((currCol: string, colNum: number): string => {
+                // Если столбец не совпадает с тем, в котором был совершен ход, то возвращаем его без изменений
                 if (colNum !== column) return currCol;
 
+                // Когда нашли столбец, в котором был совершен ход - заменяем его на нужный маркер
+                // в зависимости от того, кто совершал ход
                 return who === 'owner' ? 'X' : 'O';
             }).join('');
         });
@@ -63,6 +76,7 @@ class GamesController {
 
     private static getWinnerName(game: Game): string {
         const gameResult = game.gameResult;
+
         if (gameResult === GameResult.NO_RESULT) return '';
         if (gameResult === GameResult.DRAW) return 'draw';
         if (gameResult === GameResult.OWNER) return game.owner;
@@ -123,6 +137,8 @@ class GamesController {
     }
 
     private getParams(req: express.Request, ...params: string[]): void {
+        // Проверяем вхождение необходимых параметров в запрос, если параметры не были найдены,
+        // то устанавливаем флаг ошибки и отдаем сообщение о том, какой парамет не был передан
         this.currParams = {...req.body, error: false};
 
         for (const parameter of params) {
@@ -182,7 +198,6 @@ class GamesController {
         if (!this.accessToken) return res.json(getError("Access-Token header wasn't provided", 403));
 
         this.getParams(req, 'row', 'column');
-
         const {row, column, error, message}: IRequestParams = this.currParams;
         if (error) return res.json(getError(message));
 
@@ -296,6 +311,7 @@ class GamesController {
     }
 
     private async getGameData(req: express.Request, res: express.Response) {
+        // Получаем параметр из GET строки, если не был передан - отдаем ошибку
         const {gameToken}: { gameToken: string } = req.query;
         if (!gameToken) return res.json(getError("gameToken parameter wasn't provided"));
 
