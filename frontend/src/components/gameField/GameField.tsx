@@ -46,7 +46,8 @@ export default class GameField extends React.Component<IGameField, {}> {
     }
 
     private isNonEmptyCell(cellType: string): boolean {
-        return cellType in this.cellsTypes;
+        // Проверяем на то, сопадает ли хотя бы один тип ячейки с тем, что был передан в функцию
+        return this.cellsTypes.some((item: string): boolean => item === cellType);
     }
 
     private getAnnotation(): string {

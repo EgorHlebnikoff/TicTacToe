@@ -61,7 +61,7 @@ class GameList extends React.Component<IGameList, IGameListState> {
             connectionToGameStatus: ConnectionStatus.INITIAL,
             isConnected: false,
             isAllowedToContinue: true,
-            isCanToTryToConnect: true,
+            isGameTokenProvided: false,
         };
 
         this.fetchGames();
@@ -147,14 +147,15 @@ class GameList extends React.Component<IGameList, IGameListState> {
     }
 
     private getButtons(isAllowedToContinue: boolean): JSX.Element {
-        const {isCanToTryToConnect, currentGameToken}: IGameListState = this.state;
+        const {isGameTokenProvided, currentGameToken}: IGameListState = this.state;
 
         // Если пользователю разрешено продолжить переход к игре - отрисовываем компонент с корректной ссылкой.
-        // и делаем кнопку перехода активной для перехода, но не активной, для для попытки соединения.
+        // и делаем кнопку перехода активной для перехода, но не активной, для попытки соединения,
+        // до тех пор, пока он не предоставит gameToken.
         // Иначе отрисовываем с якорем наверх и активной кнопкой, для попытки перехода
         const linkButtonHref: string = `${isAllowedToContinue ? `/game/${currentGameToken}` : '#'}`;
-        const linkButtonClassList: string = `${!isCanToTryToConnect ? 'joinGame' : ''} ` +
-            `${isAllowedToContinue ? 'continue' : ''}`;
+        const linkButtonClassList: string = `${isGameTokenProvided ? 'joinGame' : ''} ` +
+            `${isGameTokenProvided || isAllowedToContinue ? 'continue' : ''}`;
 
         return (
             <React.Fragment>
@@ -162,7 +163,7 @@ class GameList extends React.Component<IGameList, IGameListState> {
                 <TransparentLinkButton
                     onClick={this.redirectToGameHandler}
                     href={linkButtonHref}
-                    disabled={!isCanToTryToConnect}
+                    disabled={!isGameTokenProvided}
                     className={linkButtonClassList}
                 >
                     Да
@@ -180,7 +181,7 @@ class GameList extends React.Component<IGameList, IGameListState> {
             const currGameCookies = Cookies.get('games')[gameToken];
 
             // Проверяем тип пользователя, чтобы определить то, осуществлялся ли им вход в игру
-            return (currGameCookies.type === 'owner' || currGameCookies.type === 'opponent');
+            return currGameCookies && (currGameCookies.type === 'owner' || currGameCookies.type === 'opponent');
         };
 
         // Если пользователь уе подключен к игре или состояние игры отличаетс от "Ожидание",
@@ -192,7 +193,6 @@ class GameList extends React.Component<IGameList, IGameListState> {
             currentGameToken: gameToken,
             currentGameState: state,
             isAllowedToContinue,
-            isCanToTryToConnect: isAllowedToContinue,
         });
     }
 
@@ -211,6 +211,7 @@ class GameList extends React.Component<IGameList, IGameListState> {
             currentGameToken: '',
             currentGameState: '',
             isAllowedToContinue: true,
+            isGameTokenProvided: false,
             connectionToGameStatus: ConnectionStatus.INITIAL,
         });
     }
@@ -223,13 +224,12 @@ class GameList extends React.Component<IGameList, IGameListState> {
         // Если поле находится в сотоянии ошибки, то снимаем это состояние
         if (input.classList.contains('error')) input.classList.remove('error');
 
-        // Если поле пустое и пользователю все еще нельзя пытаться подключиться
-        // или поле не пустое, и пользователю уже уже можно пытаться подключиться
-        // то не меняем сосояние
-        if (isEmptyValue && !this.state.isCanToTryToConnect) return;
-        if (!isEmptyValue && this.state.isCanToTryToConnect) return;
+        // Если поле пустое и пользователю все еще не предоставил gameToken
+        // или поле не пустое, и пользователю уже предоставил gameToken то не меняем сосояние
+        if (isEmptyValue && !this.state.isGameTokenProvided) return;
+        if (!isEmptyValue && this.state.isGameTokenProvided) return;
 
-        this.setState({isCanToTryToConnect: !isEmptyValue});
+        this.setState({isGameTokenProvided: !isEmptyValue});
     }
 
     private async redirectToGameHandler(event: MouseEvent): Promise<void> {
@@ -323,7 +323,7 @@ class GameList extends React.Component<IGameList, IGameListState> {
 
         this.setState({
             connectionToGameStatus: ConnectionStatus.WRONG_TOKEN,
-            isCanToTryToConnect: false,
+            isGameTokenProvided: false,
         });
 
         return false;

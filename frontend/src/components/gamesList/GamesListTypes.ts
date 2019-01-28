@@ -21,7 +21,7 @@ interface IGameListState {
     connectionToGameStatus: ConnectionStatus;
     isConnected: boolean;
     isAllowedToContinue: boolean;
-    isCanToTryToConnect: boolean;
+    isGameTokenProvided: boolean;
 }
 
 interface IGameList {
