@@ -1,21 +1,27 @@
 import * as bodyParser from 'body-parser';
+import * as dotenv from 'dotenv';
 import * as express from 'express';
 import GamesController from '../controller/GamesController';
 import StaticController from '../controller/StaticController';
 import {IRoute} from "./AppTypes";
 import setWebpackMiddleware from './webpackMiddleware';
 
+dotenv.config();
+
 class App {
     private readonly app: express.Application;
+    private readonly routes: IRoute[];
+
     private port: string | number = process.env.PORT || 5000;
-    private routes: IRoute[] = [
-        StaticController.indexRoute,
-        StaticController.gamePageRoute,
-        ...GamesController.routes,
-    ];
 
     constructor() {
+        this.routes = [...GamesController.routes];
         this.app = express();
+
+        if (!process.env.STATIC_SERVER || process.env.STATIC_SERVER === 'node') {
+            this.routes = [StaticController.indexRoute, StaticController.gamePageRoute, ...this.routes];
+            this.app.use(express.static('public'));
+        }
 
         this.app.use(bodyParser.json());
         this.mountRoutes();
@@ -24,7 +30,7 @@ class App {
     }
 
     public initializeServer(): void {
-        if (!process.env.PRODUCTION) setWebpackMiddleware(this.app);
+        if (process.env.MODE !== 'production') setWebpackMiddleware(this.app);
 
         this.app.listen(this.port, (error: Error) => {
             if (error) {

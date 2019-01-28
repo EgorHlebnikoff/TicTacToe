@@ -1,11 +1,21 @@
+require('dotenv').config();
+
 const path = require("path"),
     srcPath = path.resolve(__dirname, "../src/"),
     distPath = path.resolve(__dirname, "../../public/"),
     TSLintPlugin = require('tslint-webpack-plugin');
 
+const plugins = process.env.MODE === 'production' ? [] : [
+    new TSLintPlugin({
+        files: [srcPath + "/**/*.tsx"],
+        config: "./tslint.json",
+        waitForLinting: true
+    })
+];
+
 module.exports = {
-    mode: 'development',
-    devtool: 'source-map',
+    mode: process.env.MODE === 'production' ? 'production' : 'development',
+    devtool: process.env.MODE === 'production' ? 'source-map' : 'inline-source-map',
     entry: srcPath + "/App.tsx",
     output: {
         filename: "bundle.js",
@@ -26,15 +36,5 @@ module.exports = {
             }
         ]
     },
-    plugins: [
-        new TSLintPlugin({
-            files: [srcPath + "/**/*.tsx"],
-            config: "./tslint.json",
-            waitForLinting: true
-        })
-    ],
-    devServer: {
-        hot: true,
-        port: 4500
-    }
+    plugins: plugins
 };
