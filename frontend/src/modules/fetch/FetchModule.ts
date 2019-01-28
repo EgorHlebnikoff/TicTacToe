@@ -5,7 +5,7 @@ import {
     IGameStatusResponse,
     IGetGamesListResponse,
     IJoinGameResponse,
-} from "./FetchModuleypes";
+} from "./FetchModuleTypes";
 
 async function fetchGameData(gameToken: string): Promise<IGameDataResponse> {
     try {
