@@ -1,0 +1,42 @@
+version: '3.2'
+
+services:
+
+  db:
+    image: postgres:latest
+    restart: always
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - 127.0.0.1:5432:5432
+    networks:
+      - tictactoe
+
+  ap:
+    image: 'gamma1st/tictactoe'
+    environment:
+      - MODE=production
+      - PORT=5000
+      - STATIC_SERVER=node
+      - DB_URL=postgres://postgres:postgres@db:5432/postgres
+    build: .
+    restart: always
+    depends_on:
+      - db
+    expose:
+      - 5000
+    ports:
+      - 127.0.0.1:5000:5000
+    networks:
+      - tictactoe
+
+volumes:
+  dbdata:
+
+networks:
+  tictactoe:
+    driver: bridge
